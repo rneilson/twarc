@@ -1,0 +1,11 @@
+{
+  "name": "twarc",
+  "version": "0.0.1",
+  "description": "Twitter archiver and API proxy",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Raymond Neilson <rneilson@interloper.ca> (https://github.com/rneilson)",
+  "license": "Apache-2.0"
+}
