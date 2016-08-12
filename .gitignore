@@ -2,5 +2,5 @@
 /node_modules
 /demo
 notes.txt
-.access.json
-.consumer.json
+.access
+.consumer
