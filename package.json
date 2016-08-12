@@ -7,5 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Raymond Neilson <rneilson@interloper.ca> (https://github.com/rneilson)",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "dependencies": {
+    "node-ipc": "^8.1.0",
+    "node-lmdb": "^0.4.1",
+    "twitter": "^1.4.0"
+  }
 }
