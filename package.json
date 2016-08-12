@@ -2,7 +2,7 @@
   "name": "twarc",
   "version": "0.0.1",
   "description": "Personal Twitter archiver and API proxy",
-  "main": "lib/app.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

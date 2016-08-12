@@ -1,0 +1,5 @@
+{
+	"sockpath": "/tmp/",
+	"dbpath": "./data/twarc",
+	"logpath": "./data/log
+}
