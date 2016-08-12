@@ -1,8 +1,8 @@
 {
   "name": "twarc",
   "version": "0.0.1",
-  "description": "Twitter archiver and API proxy",
-  "main": "app.js",
+  "description": "Personal Twitter archiver and API proxy",
+  "main": "lib/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
