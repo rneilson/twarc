@@ -1,7 +1,7 @@
 {
-	"sockpath": "./data/sock/",
-	"dbpath": "./data/twarc/",
+	"dbpath": "./data/db/",
 	"logpath": "./data/log/",
+	"sockpath": "./data/sock/",
 	"filters": {
 		"by_user": {
 			"standalone": {
