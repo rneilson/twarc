@@ -1,5 +1,117 @@
 {
-	"sockpath": "/tmp/",
-	"dbpath": "./data/twarc",
-	"logpath": "./data/log
+	"sockpath": "./data/sock/",
+	"dbpath": "./data/twarc/",
+	"logpath": "./data/log/",
+	"filters": {
+		"by_user": {
+			"standalone": {
+				"source": true
+			},
+			"retweet": {
+				"of_user": {
+					"source": true,
+					"target": false,
+				},
+				"of_followed": {
+					"source": true,
+					"target": true,
+				},
+				"of_other": {
+					"source": true,
+					"target": true,
+				},
+			},
+			"quote": {
+				"of_user": {
+					"source": true,
+					"target": false,
+				},
+				"of_followed": {
+					"source": true,
+					"target": true,
+				},
+				"of_other": {
+					"source": true,
+					"target": true,
+				},
+			},
+			"reply": {
+				"to_user": {
+					"source": true,
+					"target": false,
+				},
+				"to_followed": {
+					"source": true,
+					"target": true,
+				},
+				"to_other": {
+					"source": true,
+					"target": true,
+				},
+			},
+			"user_favorited": {
+				"source": false
+			}
+		},
+		"by_followed": {
+			"retweet": {
+				"source": false,
+				"target": false,
+			},
+			"quote": {
+				"source": true,
+				"target": true,
+			},
+			"reply": {
+				"to_user": {
+					"source": true,
+					"target": true,
+				},
+				"to_followed": {
+					"source": true,
+					"target": false,
+				},
+				"to_other": {
+					"source": true,
+					"target": false,
+				},
+			},
+			"other_mention": {
+				"source": true
+			},
+			"user_favorited": {
+				"source": true
+			}
+		},
+		"by_other": {
+			"retweet": {
+				"source": false,
+				"target": false,
+			},
+			"quote": {
+				"source": true,
+				"target": true,
+			},
+			"reply": {
+				"to_user": {
+					"source": true,
+					"target": true,
+				},
+				"to_followed": {
+					"source": true,
+					"target": false,
+				},
+				"to_other": {
+					"source": true,
+					"target": false,
+				},
+			},
+			"other_mention": {
+				"source": true
+			},
+			"user_favorited": {
+				"source": true
+			}
+		}
+	},
 }
