@@ -50,7 +50,8 @@
 				}
 			},
 			"user_favorited": {
-				"source": false
+				"source": false,
+				"target": false
 			}
 		},
 		"by_followed": {
@@ -77,10 +78,12 @@
 				}
 			},
 			"other_mention": {
-				"source": true
+				"source": true,
+				"target": true
 			},
 			"user_favorited": {
-				"source": true
+				"source": true,
+				"target": true
 			}
 		},
 		"by_other": {
@@ -107,10 +110,12 @@
 				}
 			},
 			"other_mention": {
-				"source": true
+				"source": true,
+				"target": true
 			},
 			"user_favorited": {
-				"source": true
+				"source": true,
+				"target": true
 			}
 		}
 	}
