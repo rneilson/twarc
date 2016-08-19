@@ -84,11 +84,11 @@
 					"quoted": false
 				},
 				"of_followed": {
-					"source": true,
+					"source": false,
 					"quoted": false
 				},
 				"of_other": {
-					"source": true,
+					"source": false,
 					"quoted": false
 				}
 			},
@@ -104,9 +104,9 @@
 					"quoted": true
 				},
 				"to_other": {
-					"source": true,
-					"target": true,
-					"quoted": true
+					"source": false,
+					"target": false,
+					"quoted": false
 				}
 			},
 			"other_mention": {
@@ -138,38 +138,38 @@
 			},
 			"quote": {
 				"of_user": {
-					"source": true,
+					"source": false,
 					"quoted": false
 				},
 				"of_followed": {
-					"source": true,
+					"source": false,
 					"quoted": false
 				},
 				"of_other": {
-					"source": true,
+					"source": false,
 					"quoted": false
 				}
 			},
 			"reply": {
 				"to_user": {
-					"source": true,
-					"target": true,
-					"quoted": true
+					"source": false,
+					"target": false,
+					"quoted": false
 				},
 				"to_followed": {
-					"source": true,
+					"source": false,
 					"target": false,
-					"quoted": true
+					"quoted": false
 				},
 				"to_other": {
-					"source": true,
+					"source": false,
 					"target": false,
-					"quoted": true
+					"quoted": false
 				}
 			},
 			"other_mention": {
-				"source": true,
-				"quoted": true
+				"source": false,
+				"quoted": false
 			},
 			"user_favorited": {
 				"source": true,
