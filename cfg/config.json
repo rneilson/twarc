@@ -10,112 +10,170 @@
 			"retweet": {
 				"of_user": {
 					"source": true,
-					"target": false
+					"target": false,
+					"quoted": false
 				},
 				"of_followed": {
 					"source": true,
-					"target": true
+					"target": true,
+					"quoted": true
 				},
 				"of_other": {
 					"source": true,
-					"target": true
+					"target": true,
+					"quoted": true
 				}
 			},
 			"quote": {
 				"of_user": {
 					"source": true,
-					"target": false
+					"quoted": false
 				},
 				"of_followed": {
 					"source": true,
-					"target": true
+					"quoted": true
 				},
 				"of_other": {
 					"source": true,
-					"target": true
+					"quoted": true
 				}
 			},
 			"reply": {
 				"to_user": {
 					"source": true,
-					"target": false
+					"target": false,
+					"quoted": true
 				},
 				"to_followed": {
 					"source": true,
-					"target": true
+					"target": true,
+					"quoted": true
 				},
 				"to_other": {
 					"source": true,
-					"target": true
+					"target": true,
+					"quoted": true
 				}
 			},
 			"user_favorited": {
 				"source": false,
-				"target": false
+				"quoted": false
 			}
 		},
 		"by_followed": {
 			"retweet": {
-				"source": false,
-				"target": false
+				"of_user": {
+					"source": false,
+					"target": false,
+					"quoted": false
+				},
+				"of_followed": {
+					"source": false,
+					"target": false,
+					"quoted": false
+				},
+				"of_other": {
+					"source": false,
+					"target": false,
+					"quoted": false
+				}
 			},
 			"quote": {
-				"source": true,
-				"target": true
+				"of_user": {
+					"source": true,
+					"quoted": false
+				},
+				"of_followed": {
+					"source": true,
+					"quoted": false
+				},
+				"of_other": {
+					"source": true,
+					"quoted": false
+				}
 			},
 			"reply": {
 				"to_user": {
 					"source": true,
-					"target": true
+					"target": true,
+					"quoted": true
 				},
 				"to_followed": {
 					"source": true,
-					"target": false
+					"target": true,
+					"quoted": true
 				},
 				"to_other": {
 					"source": true,
-					"target": false
+					"target": true,
+					"quoted": true
 				}
 			},
 			"other_mention": {
 				"source": true,
-				"target": true
+				"quoted": true
 			},
 			"user_favorited": {
 				"source": true,
-				"target": true
+				"quoted": true
 			}
 		},
 		"by_other": {
 			"retweet": {
-				"source": false,
-				"target": false
+				"of_user": {
+					"source": false,
+					"target": false,
+					"quoted": false
+				},
+				"of_followed": {
+					"source": false,
+					"target": false,
+					"quoted": false
+				},
+				"of_other": {
+					"source": false,
+					"target": false,
+					"quoted": false
+				}
 			},
 			"quote": {
-				"source": true,
-				"target": true
+				"of_user": {
+					"source": true,
+					"quoted": false
+				},
+				"of_followed": {
+					"source": true,
+					"quoted": false
+				},
+				"of_other": {
+					"source": true,
+					"quoted": false
+				}
 			},
 			"reply": {
 				"to_user": {
 					"source": true,
-					"target": true
+					"target": true,
+					"quoted": true
 				},
 				"to_followed": {
 					"source": true,
-					"target": false
+					"target": false,
+					"quoted": true
 				},
 				"to_other": {
 					"source": true,
-					"target": false
+					"target": false,
+					"quoted": true
 				}
 			},
 			"other_mention": {
 				"source": true,
-				"target": true
+				"quoted": true
 			},
 			"user_favorited": {
 				"source": true,
-				"target": true
+				"quoted": true
 			}
 		}
 	}
