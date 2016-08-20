@@ -8,10 +8,16 @@
   },
   "author": "Raymond Neilson <rneilson@interloper.ca> (https://github.com/rneilson)",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rneilson/twarc.git"
+  },
+  "engines": {
+    "node": ">=6.0"
+  },
   "dependencies": {
     "lodash": "^4.15.0",
     "node-ipc": "^8.1.0",
-    "node-lmdb": "^0.4.1",
     "twitter": "https://github.com/rneilson/node-twitter/archive/v1.4.0-rn.tar.gz"
   }
 }

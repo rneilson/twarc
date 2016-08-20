@@ -1,6 +1,7 @@
 /data
 /tmp
 /node_modules
+/node-lmdb
 notes.txt
 access.json
 consumer.json
