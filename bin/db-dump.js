@@ -14,7 +14,7 @@ dbe.open({
 });
 const dbs = {};
 const names = ['users', 'screennames', 'tweets', 'userdates', 'otherdates', 'favdates'];
-var txn, cur, key, val, writer, prefix = '';
+var txn, cur, key, val, writer, idxlist, prefix = '';
 
 // Open dbs
 for (let name of names) {
@@ -98,6 +98,40 @@ writer = (k, v) => writefn('favorite', JSON.parse(v.toString()));
 for (key = cur.goToFirst(); key; key = cur.goToNext()) {
 	cur.getCurrentBinaryUnsafe(writer);
 }
+
+cur.close();
+txn.commit();
+
+
+// Output user tweet index
+txn = dbe.beginTxn({readOnly: true});
+cur = new lmdb.Cursor(txn, dbs.userdates);
+idxlist = [];
+
+writer = (k, v) => idxlist.push({[k]: v});
+
+for (key = cur.goToFirst(); key; key = cur.goToNext()) {
+	cur.getCurrentString(writer);
+}
+
+writefn('user_tweet_index', idxlist);
+
+cur.close();
+txn.commit();
+
+
+// Output other tweet index
+txn = dbe.beginTxn({readOnly: true});
+cur = new lmdb.Cursor(txn, dbs.otherdates);
+idxlist = [];
+
+writer = (k, v) => idxlist.push({[k]: v});
+
+for (key = cur.goToFirst(); key; key = cur.goToNext()) {
+	cur.getCurrentString(writer);
+}
+
+writefn('other_tweet_index', idxlist);
 
 cur.close();
 txn.commit();
