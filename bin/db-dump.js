@@ -13,7 +13,7 @@ dbe.open({
 	maxDbs: 8
 });
 const dbs = {};
-const names = ['users', 'tweets', 'userdates', 'otherdates', 'favdates'];
+const names = ['users', 'screennames', 'tweets', 'userdates', 'otherdates', 'favdates'];
 var txn, cur, key, val, writer, prefix = '';
 
 // Open dbs
