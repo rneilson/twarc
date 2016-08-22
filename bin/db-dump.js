@@ -51,20 +51,6 @@ cur.close();
 txn.commit();
 
 
-// Output favdates
-txn = dbe.beginTxn({readOnly: true});
-cur = new lmdb.Cursor(txn, dbs.favdates);
-
-writer = (k, v) => writefn('favorite', JSON.parse(v.toString()));
-
-for (key = cur.goToFirst(); key; key = cur.goToNext()) {
-	cur.getCurrentBinaryUnsafe(writer);
-}
-
-cur.close();
-txn.commit();
-
-
 // Output user tweets
 txn = dbe.beginTxn({readOnly: true});
 cur = new lmdb.Cursor(txn, dbs.userdates);
@@ -97,6 +83,20 @@ writer = (k, v) => {
 
 for (key = cur.goToFirst(); key; key = cur.goToNext()) {
 	cur.getCurrentString(writer);
+}
+
+cur.close();
+txn.commit();
+
+
+// Output favdates
+txn = dbe.beginTxn({readOnly: true});
+cur = new lmdb.Cursor(txn, dbs.favdates);
+
+writer = (k, v) => writefn('favorite', JSON.parse(v.toString()));
+
+for (key = cur.goToFirst(); key; key = cur.goToNext()) {
+	cur.getCurrentBinaryUnsafe(writer);
 }
 
 cur.close();
