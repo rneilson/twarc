@@ -71,7 +71,17 @@ cur = new lmdb.Cursor(txn, dbs.tweets);
 
 writer = (k, v) => {
 	let t = JSON.parse(v.toString());
-	writefn(filters.user(t.user) ? 'user_tweet' : 'other_tweet', t);
+	if (t.deleted) {
+		// Convert from stored format to broadcast format
+		writefn('delete', {
+			id_str: t.id_str,
+			user_id_str: t.user.id_str,
+			time: t.deleted
+		});
+	}
+	else {
+		writefn(filters.user(t.user) ? 'user_tweet' : 'other_tweet', t);
+	}
 };
 
 for (key = cur.goToFirst(); key; key = cur.goToNext()) {
