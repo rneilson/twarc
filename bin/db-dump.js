@@ -13,7 +13,7 @@ dbe.open({
 	maxDbs: 8
 });
 const dbs = {};
-const names = ['users', 'screennames', 'tweets', 'userdates', 'otherdates', 'favdates'];
+const names = ['users', 'screennames', 'tweets', 'userdates', 'otherdates', 'favids', 'favdates'];
 var txn, cur, key, val, writer, idxlist, prefix = '';
 
 // Open dbs
@@ -56,10 +56,13 @@ txn = dbe.beginTxn({readOnly: true});
 cur = new lmdb.Cursor(txn, dbs.userdates);
 
 writer = (k, v) => {
-	// Get tweet from other db
-	let t = txn.getBinaryUnsafe(dbs.tweets, v);
-	// Parse and write
-	writefn('user_tweet', JSON.parse(t.toString()))
+	let ids = v.startsWith('[') ? JSON.parse(v) : [v];
+	for (let id of ids) {
+		// Get tweet from other db
+		let t = txn.getBinaryUnsafe(dbs.tweets, id);
+		// Parse and write
+		writefn('user_tweet', JSON.parse(t.toString()))
+	}
 };
 
 for (key = cur.goToFirst(); key; key = cur.goToNext()) {
@@ -75,10 +78,13 @@ txn = dbe.beginTxn({readOnly: true});
 cur = new lmdb.Cursor(txn, dbs.otherdates);
 
 writer = (k, v) => {
-	// Get tweet from other db
-	let t = txn.getBinaryUnsafe(dbs.tweets, v);
-	// Parse and write
-	writefn('other_tweet', JSON.parse(t.toString()))
+	let ids = v.startsWith('[') ? JSON.parse(v) : [v];
+	for (let id of ids) {
+		// Get tweet from other db
+		let t = txn.getBinaryUnsafe(dbs.tweets, id);
+		// Parse and write
+		writefn('other_tweet', JSON.parse(t.toString()))
+	}
 };
 
 for (key = cur.goToFirst(); key; key = cur.goToNext()) {
@@ -89,52 +95,52 @@ cur.close();
 txn.commit();
 
 
-// Output favdates
+// Output favorites
 txn = dbe.beginTxn({readOnly: true});
-cur = new lmdb.Cursor(txn, dbs.favdates);
+cur = new lmdb.Cursor(txn, dbs.favids);
 
-writer = (k, v) => writefn('favorite', JSON.parse(v.toString()));
-
-for (key = cur.goToFirst(); key; key = cur.goToNext()) {
-	cur.getCurrentBinaryUnsafe(writer);
-}
-
-cur.close();
-txn.commit();
-
-
-// Output user tweet index
-txn = dbe.beginTxn({readOnly: true});
-cur = new lmdb.Cursor(txn, dbs.userdates);
-idxlist = [];
-
-writer = (k, v) => idxlist.push({[k]: v});
+writer = (k, v) => writefn('favorite', {id_str: k, time: parseInt(v)});
 
 for (key = cur.goToFirst(); key; key = cur.goToNext()) {
 	cur.getCurrentString(writer);
 }
 
-writefn('user_tweet_index', idxlist);
-
 cur.close();
 txn.commit();
 
 
-// Output other tweet index
-txn = dbe.beginTxn({readOnly: true});
-cur = new lmdb.Cursor(txn, dbs.otherdates);
-idxlist = [];
+// // Output user tweet index
+// txn = dbe.beginTxn({readOnly: true});
+// cur = new lmdb.Cursor(txn, dbs.userdates);
+// idxlist = [];
 
-writer = (k, v) => idxlist.push({[k]: v});
+// writer = (k, v) => idxlist.push({[k]: v});
 
-for (key = cur.goToFirst(); key; key = cur.goToNext()) {
-	cur.getCurrentString(writer);
-}
+// for (key = cur.goToFirst(); key; key = cur.goToNext()) {
+// 	cur.getCurrentString(writer);
+// }
 
-writefn('other_tweet_index', idxlist);
+// writefn('user_tweet_index', idxlist);
 
-cur.close();
-txn.commit();
+// cur.close();
+// txn.commit();
+
+
+// // Output other tweet index
+// txn = dbe.beginTxn({readOnly: true});
+// cur = new lmdb.Cursor(txn, dbs.otherdates);
+// idxlist = [];
+
+// writer = (k, v) => idxlist.push({[k]: v});
+
+// for (key = cur.goToFirst(); key; key = cur.goToNext()) {
+// 	cur.getCurrentString(writer);
+// }
+
+// writefn('other_tweet_index', idxlist);
+
+// cur.close();
+// txn.commit();
 
 
 // Output trailing ']'
