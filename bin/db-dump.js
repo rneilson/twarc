@@ -93,12 +93,11 @@ cur.close();
 txn.commit();
 
 
-// Output user tweet index
+// Output indices
+writeindex(dbs.screennames, 'user_index');
 writeindex(dbs.userdates, 'user_tweet_index');
-
-
-// Output other tweet index
 writeindex(dbs.otherdates, 'other_tweet_index');
+writeindex(dbs.favdates, 'favorite_index');
 
 
 // Output trailing ']'
