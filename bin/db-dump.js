@@ -7,6 +7,9 @@ const util = require('util');
 const lmdb = require('../node-lmdb');
 const Filters = require('../lib/filters.js');
 
+// Find base directory for consistency
+const basedir = path.resolve(__dirname, '..');
+
 // Config
 const appcfg = _.defaultsDeep(
 	{},
@@ -20,7 +23,7 @@ const filters = new Filters(appcfg);
 // LMDB
 var dbe = new lmdb.Env();
 dbe.open({
-	path: path.resolve(process.cwd(), '../data/db/'),
+	path: path.resolve(basedir, appcfg.dbpath),
 	mapSize: 1 * 1024 * 1024 * 1024,	// 1 GiB
 	maxDbs: 8
 });
@@ -68,7 +71,7 @@ cur = new lmdb.Cursor(txn, dbs.tweets);
 
 writer = (k, v) => {
 	let t = JSON.parse(v.toString());
-	writefn(filters.user(t) ? 'user_tweet' : 'other_tweet', t);
+	writefn(filters.user(t.user) ? 'user_tweet' : 'other_tweet', t);
 };
 
 for (key = cur.goToFirst(); key; key = cur.goToNext()) {
