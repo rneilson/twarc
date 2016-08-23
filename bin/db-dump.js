@@ -23,7 +23,7 @@ const filters = new Filters(appcfg);
 // LMDB
 var dbe = new lmdb.Env();
 dbe.open({
-	path: path.resolve(basedir, appcfg.dbpath),
+	path: path.isAbsolute(appcfg.dbpath) ? appcfg.dbpath : path.resolve(basedir, appcfg.dbpath),
 	mapSize: 1 * 1024 * 1024 * 1024,	// 1 GiB
 	maxDbs: 8
 });
