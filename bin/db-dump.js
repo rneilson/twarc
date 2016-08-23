@@ -1,9 +1,21 @@
 #!/usr/bin/env node
 'use strict';
 
+const _ = require('lodash');
 const path = require('path');
 const util = require('util');
 const lmdb = require('../node-lmdb');
+const Filters = require('../lib/filters.js');
+
+// Config
+const appcfg = _.defaultsDeep(
+	{},
+	require('../cfg/user.json'),
+	require('../cfg/config.json')
+);
+
+// Filter setup
+const filters = new Filters(appcfg);
 
 // LMDB
 var dbe = new lmdb.Env();
@@ -14,12 +26,11 @@ dbe.open({
 });
 const dbs = {};
 const names = ['users', 'screennames', 'tweets', 'userdates', 'otherdates', 'favids', 'favdates'];
-var txn, cur, key, val, writer, idxlist, prefix = '';
-
-// Open dbs
 for (let name of names) {
 	dbs[name] = dbe.openDbi({name, create: true});
 }
+
+var txn, cur, key, val, writer, idxstr, prefix = '';
 
 // TEMP
 // Print db stats to console
@@ -34,7 +45,7 @@ txn.commit();
 
 // Output leading '['
 process.stdout.write('[\n');
-// Output leading log summary
+// TODO: output leading log summary
 
 
 // Output users
@@ -51,44 +62,17 @@ cur.close();
 txn.commit();
 
 
-// Output user tweets
+// Output tweets
 txn = dbe.beginTxn({readOnly: true});
-cur = new lmdb.Cursor(txn, dbs.userdates);
+cur = new lmdb.Cursor(txn, dbs.tweets);
 
 writer = (k, v) => {
-	let ids = v.startsWith('[') ? JSON.parse(v) : [v];
-	for (let id of ids) {
-		// Get tweet from other db
-		let t = txn.getBinaryUnsafe(dbs.tweets, id);
-		// Parse and write
-		writefn('user_tweet', JSON.parse(t.toString()))
-	}
+	let t = JSON.parse(v.toString());
+	writefn(filters.user(t) ? 'user_tweet' : 'other_tweet', t);
 };
 
 for (key = cur.goToFirst(); key; key = cur.goToNext()) {
-	cur.getCurrentString(writer);
-}
-
-cur.close();
-txn.commit();
-
-
-// Output other tweets
-txn = dbe.beginTxn({readOnly: true});
-cur = new lmdb.Cursor(txn, dbs.otherdates);
-
-writer = (k, v) => {
-	let ids = v.startsWith('[') ? JSON.parse(v) : [v];
-	for (let id of ids) {
-		// Get tweet from other db
-		let t = txn.getBinaryUnsafe(dbs.tweets, id);
-		// Parse and write
-		writefn('other_tweet', JSON.parse(t.toString()))
-	}
-};
-
-for (key = cur.goToFirst(); key; key = cur.goToNext()) {
-	cur.getCurrentString(writer);
+	cur.getCurrentBinaryUnsafe(writer);
 }
 
 cur.close();
@@ -109,38 +93,12 @@ cur.close();
 txn.commit();
 
 
-// // Output user tweet index
-// txn = dbe.beginTxn({readOnly: true});
-// cur = new lmdb.Cursor(txn, dbs.userdates);
-// idxlist = [];
-
-// writer = (k, v) => idxlist.push({[k]: v});
-
-// for (key = cur.goToFirst(); key; key = cur.goToNext()) {
-// 	cur.getCurrentString(writer);
-// }
-
-// writefn('user_tweet_index', idxlist);
-
-// cur.close();
-// txn.commit();
+// Output user tweet index
+writeindex(dbs.userdates, 'user_tweet_index');
 
 
-// // Output other tweet index
-// txn = dbe.beginTxn({readOnly: true});
-// cur = new lmdb.Cursor(txn, dbs.otherdates);
-// idxlist = [];
-
-// writer = (k, v) => idxlist.push({[k]: v});
-
-// for (key = cur.goToFirst(); key; key = cur.goToNext()) {
-// 	cur.getCurrentString(writer);
-// }
-
-// writefn('other_tweet_index', idxlist);
-
-// cur.close();
-// txn.commit();
+// Output other tweet index
+writeindex(dbs.otherdates, 'other_tweet_index');
 
 
 // Output trailing ']'
@@ -152,9 +110,34 @@ for (let name of names) {
 }
 dbe.close();
 
+
 function writefn (type, data) {
 	process.stdout.write(prefix + JSON.stringify({type, data}, null, 2));
 	if (!prefix) {
 		prefix = ',\n';
 	}
+}
+
+function writeindex (db, type) {
+	txn = dbe.beginTxn({readOnly: true});
+	cur = new lmdb.Cursor(txn, db);
+
+	key = cur.goToFirst();
+	if (key !== null) {
+		cur.getCurrentString((k, v) => {
+			idxstr = prefix + `{\n  "type": "${type},\n  "data": {\n    "${k}": "${v}"`;
+		});
+
+		while (cur.goToNext()) {
+			cur.getCurrentString((k, v) => {
+				idxstr += `,\n    "${k}": "${v}"`;
+			});
+		}
+
+		idxstr += `\n  }\n}`;
+		process.stdout.write(idxstr);
+	}
+
+	cur.close();
+	txn.commit();
 }
