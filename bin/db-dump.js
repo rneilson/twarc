@@ -137,7 +137,10 @@ function writeindex (db, type) {
 	key = cur.goToFirst();
 	if (key !== null) {
 		cur.getCurrentString((k, v) => {
-			idxstr = prefix + `{\n  "type": "${type},\n  "data": {\n    "${k}": "${v}"`;
+			if (!v.startsWith('[')) {
+				v = `"${v}"`;
+			}
+			idxstr = prefix + `{\n  "type": "${type}",\n  "data": {\n    "${k}": ${v}`;
 		});
 
 		while (cur.goToNext()) {
