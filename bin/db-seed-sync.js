@@ -39,6 +39,18 @@ const filenames = process.argv.slice(2);
 for (let fname of filenames) {
 	loadfile(fname);
 }
+
+// Sync and close
+dbe.sync(err => {
+	if (err) {
+		console.error(err);
+	}
+	for (let key of Object.keys(dbs)) {
+		dbs[key].close();
+	}
+	dbe.close();
+});
+
 console.log('Finished!');
 
 
