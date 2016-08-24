@@ -52,15 +52,11 @@ function loadfile (name) {
 		// Read file into memory
 		let str = fs.readFileSync(filename, {encoding: 'utf8'});
 
-		// Convert to JSON
+		// Convert from JSON
 		let eventlist = JSON.parse(str);
 
-		// Feed each event to writer process
-		for (let event of eventlist) {
-			if (_.has(event, 'type') && _.has(event, 'data')) {
-				ipc.of.writer.emit(event.type, event.data);
-			}
-		}
+		// Send queue to writer process
+		ipc.of.writer.emit('queue', eventlist);
 
 		console.log(`Processed ${filename}`);
 	}
