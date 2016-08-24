@@ -5,7 +5,7 @@ const _ = require('lodash');
 const fs = require('fs');
 const path = require('path');
 const lmdb = require('../node-lmdb');
-const Filters = require('./filters.js');
+const Filters = require('../lib/filters.js');
 
 // Config
 const appcfg = _.defaultsDeep(
@@ -20,7 +20,10 @@ var dbe = new lmdb.Env();
 dbe.open({
 	path: dbpath,
 	mapSize: 1 * 1024 * 1024 * 1024,	// 1 GiB
-	maxDbs: 10
+	maxDbs: 10,
+	maxReaders: 8,
+	noSync: true,
+	// noMetaSync: true,
 });
 const dbs = {};
 const names = ['status', 'users', 'screennames', 'tweets', 'userdates', 'otherdates', 'favids', 'favdates', 'urls', 'media'];
