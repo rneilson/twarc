@@ -145,7 +145,10 @@ function writeindex (db, type) {
 
 		while (cur.goToNext()) {
 			cur.getCurrentString((k, v) => {
-				idxstr += `,\n    "${k}": "${v}"`;
+				if (!v.startsWith('[')) {
+					v = `"${v}"`;
+				}
+				idxstr += `,\n    "${k}": ${v}`;
 			});
 		}
 
