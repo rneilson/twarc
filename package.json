@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "lodash": "^4.15.0",
+    "node-fetch": "^1.6.0",
     "node-ipc": "^8.1.0",
     "twitter": "https://github.com/rneilson/node-twitter/archive/v1.4.0-rn1.tar.gz"
   }
