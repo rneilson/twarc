@@ -42,8 +42,9 @@ console.log('Finished!');
 
 // Funcs
 function loadfile (name) {
-	const types = ['user', 'user_tweet', 'other_tweet', 'delete', 'favorite', 'unfavorite'];
+	const types = ['status', 'user', 'user_tweet', 'other_tweet', 'delete', 'favorite', 'unfavorite'];
 	let count = {
+		'status': 0,
 		'user': 0,
 		'user_tweet': 0,
 		'other_tweet': 0,
@@ -61,6 +62,9 @@ function loadfile (name) {
 		switch (type) {
 			case 'queue':
 				retw = writeq(data);
+				break;
+			case 'status':
+				retw = dbw.setstatus('', data, txn);
 				break;
 			case 'user':
 				retw = dbw.writeuser(data, txn);
@@ -86,7 +90,6 @@ function loadfile (name) {
 	}
 
 	function writeq (queue) {
-		const types = ['user', 'user_tweet', 'other_tweet', 'delete', 'favorite', 'unfavorite'];
 		let retq = false;
 
 		// Open transaction

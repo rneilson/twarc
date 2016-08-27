@@ -33,7 +33,7 @@ for (let name of names) {
 	dbs[name] = dbe.openDbi({name, create: true});
 }
 
-var txn, cur, key, val, writer, idxstr, prefix = '';
+var txn, cur, key, val, acc, writer, prefix = '';
 
 // TEMP
 // Print db stats to console
@@ -49,6 +49,25 @@ txn.commit();
 // Output leading '['
 process.stdout.write('[\n');
 // TODO: output leading log summary
+
+
+// Output status
+txn = dbe.beginTxn({readOnly: true});
+cur = new lmdb.Cursor(txn, dbs.status);
+
+acc = [];
+writer = (k, v) => {
+	acc.push([k, JSON.parse(v.toString())]);
+};
+
+for (key = cur.goToFirst(); key; key = cur.goToNext()) {
+	cur.getCurrentBinaryUnsafe(writer);
+}
+
+writefn('status', _.reduce(acc, (a, [k, v], i) => _.set(a, k, v), {}));
+
+cur.close();
+txn.commit();
 
 
 // Output users
@@ -140,7 +159,7 @@ function writeindex (db, type) {
 			if (!v.startsWith('[')) {
 				v = `"${v}"`;
 			}
-			idxstr = prefix + `{\n  "type": "${type}",\n  "data": {\n    "${k}": ${v}`;
+			acc = prefix + `{\n  "type": "${type}",\n  "data": {\n    "${k}": ${v}`;
 		});
 
 		while (cur.goToNext()) {
@@ -148,12 +167,12 @@ function writeindex (db, type) {
 				if (!v.startsWith('[')) {
 					v = `"${v}"`;
 				}
-				idxstr += `,\n    "${k}": ${v}`;
+				acc += `,\n    "${k}": ${v}`;
 			});
 		}
 
-		idxstr += `\n  }\n}`;
-		process.stdout.write(idxstr);
+		acc += `\n  }\n}`;
+		process.stdout.write(acc);
 	}
 
 	cur.close();
