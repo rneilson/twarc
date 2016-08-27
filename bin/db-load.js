@@ -42,9 +42,8 @@ console.log('Finished!');
 
 // Funcs
 function loadfile (name) {
-	const types = ['status', 'user', 'user_tweet', 'other_tweet', 'delete', 'favorite', 'unfavorite'];
+	const types = ['user', 'user_tweet', 'other_tweet', 'delete', 'favorite', 'unfavorite'];
 	let count = {
-		'status': 0,
 		'user': 0,
 		'user_tweet': 0,
 		'other_tweet': 0,
