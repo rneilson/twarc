@@ -55,16 +55,14 @@ process.stdout.write('[\n');
 txn = dbe.beginTxn({readOnly: true});
 cur = new lmdb.Cursor(txn, dbs.status);
 
-acc = [];
-writer = (k, v) => {
-	acc.push([k, JSON.parse(v.toString())]);
-};
+acc = {};
+writer = (k, v) => _.set(acc, k, JSON.parse(v.toString()));
 
 for (key = cur.goToFirst(); key; key = cur.goToNext()) {
 	cur.getCurrentBinaryUnsafe(writer);
 }
 
-writefn('status', _.reduce(acc, (a, [k, v], i) => _.set(a, k, v), {}));
+writefn('status', acc);
 
 cur.close();
 txn.commit();
