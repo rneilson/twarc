@@ -65,6 +65,9 @@ function loadfile (name) {
 			case 'status':
 				retw = dbw.setstatus('', data, txn);
 				break;
+			case 'following':
+				retw = dbw.setstatus('following', data, txn);
+				break;
 			case 'user':
 				retw = dbw.writeuser(data, txn);
 				break;
