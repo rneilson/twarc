@@ -62,7 +62,7 @@ for (key = cur.goToFirst(); key; key = cur.goToNext()) {
 	cur.getCurrentBinaryUnsafe(writer);
 }
 
-writefn('status', acc);
+writefn('status_raw', acc);
 
 cur.close();
 txn.commit();
