@@ -19,8 +19,19 @@ util.inspect.defaultOptions.depth = null;
 const Arghs = require('../lib/arghs.js');
 var argv = new Arghs({
 	named: ['path'],
-	options: ['user_id', 'screen_name', 'id', 'since_id', 'max_id', 'count'],
-	flags: ['default_user', 'stringify_ids', 'trim_user', 'post'],
+	options: {
+		'user_id': 'array',
+		'screen_name': 'array',
+		'id': 'array',
+		'since_id': 'string',
+		'max_id': 'string',
+		'count': 'string',
+		'default_user': 'bool',
+		'stringify_ids': 'bool',
+		'trim_user': 'bool',
+		'post': 'bool',
+		'verbose': 'count'
+	},
 	aliases: {
 		'd': 'default_user',
 		'u': 'user_id',
@@ -31,7 +42,8 @@ var argv = new Arghs({
 		'c': 'count',
 		'g': 'stringify_ids',
 		't': 'trim_user',
-		'p': 'post'
+		'p': 'post',
+		'v': 'verbose'
 	}
 }).parse();
 
@@ -89,8 +101,11 @@ for (let extra of Object.keys(argv.$)) {
 	argv[extra] = _.isArray(argv.$[extra]) ? argv.$[extra].join(',') : argv.$[extra];
 }
 
-// console.log(`Path: ${apipath}`);
-// console.log(`Params:`, util.inspect(argv));
+if (argv.verbose) {
+	delete argv.verbose;
+	console.error(`Path: ${apipath}`);
+	console.error(`Params:`, util.inspect(argv));
+}
 
 // GO
 twit.get(apipath, argv).then(
