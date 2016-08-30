@@ -44,6 +44,19 @@ var argv = new Arghs({
 		't': 'trim_user',
 		'p': 'post',
 		'v': 'verbose'
+	},
+	help: {
+		'default_user': 'use configured user_id for request',
+		'user_id': 'use user_id(s) for request',
+		'screen_name': 'use screen_name(s) for request',
+		'id': 'use item id(s) for request',
+		'since_id': 'return only tweets since this id',
+		'max_id': 'return only tweets up to and including this id',
+		'count': 'number of tweets to retrieve',
+		'stringify_ids': 'return friend/follower ids as strings',
+		'trim_user': 'truncate returned user objects',
+		'post': 'send POST request instead of GET',
+		'verbose': 'show additional information for each invocation'
 	}
 }).parse();
 
@@ -104,7 +117,7 @@ for (let extra of Object.keys(argv.$)) {
 if (argv.verbose) {
 	delete argv.verbose;
 	console.error(`Path: ${apipath}`);
-	console.error(`Params:`, util.inspect(argv));
+	console.error(`Params:`, util.inspect(argv), '\n');
 }
 
 // GO
