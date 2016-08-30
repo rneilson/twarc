@@ -5,90 +5,35 @@ const util = require('util');
 util.inspect.defaultOptions.colors = true;
 util.inspect.defaultOptions.depth = null;
 
-var argv = require('yargs')
-	.usage('Usage: $0 [options] <path>')
-	.options({
-		'd': {
-			alias: 'default_user',
-			describe: 'use default user_id for request',
-			type: 'boolean'
-		},
-		'u': {
-			alias: 'user_id',
-			describe: 'use this user_id for request',
-			nargs: 1,
-			requiresArg: true,
-			type: 'string'
-		},
-		'n': {
-			alias: 'screen_name',
-			describe: 'use this screen_name for request',
-			nargs: 1,
-			requiresArg: true,
-			type: 'string'
-		},
-		'i': {
-			alias: 'id',
-			describe: 'use this item id for request',
-			nargs: 1,
-			requiresArg: true,
-			type: 'string'
-		},
-		's': {
-			alias: 'since_id',
-			describe: 'return only tweets since this id',
-			nargs: 1,
-			requiresArg: true,
-			type: 'string'
-		},
-		'm': {
-			alias: 'max_id',
-			describe: 'return only tweets up to and including this id',
-			nargs: 1,
-			requiresArg: true,
-			type: 'string'
-		},
-		'c': {
-			alias: 'count',
-			describe: 'number of tweets to retrieve',
-			nargs: 1,
-			requiresArg: true,
-			type: 'number'
-		},
-		'g': {
-			alias: 'stringify_ids',
-			describe: 'return friend/follower ids as strings',
-			type: 'boolean'
-		},
-		't': {
-			alias: 'trim_user',
-			describe: 'truncate returned user objects',
-			type: 'boolean'
-		},
-		'p': {
-			alias: 'post',
-			describe: 'send POST request instead of GET',
-			type: 'boolean'
-		}
-	})
-	.string('_')
-	.help('h')
-	.alias('h', 'help')
-	.demand(1, 1)
-	.strict()
-	.check((hash, args) => {
-		let num = 0;
-		if (hash.default_user) num++;
-		if (hash.user_id) num++;
-		if (hash.screen_name) num++;
-		if (num > 1) {
-			throw new Error('Cannot specify more than one of default_user, user_id, and screen_name options');
-		}
-		return true;
-	})
-	.argv;
+	// 'default_user': 'use default user_id for request',
+	// 'user_id': 'use this user_id for request',
+	// 'screen_name': 'use this screen_name for request',
+	// 'id': 'use this item id for request',
+	// 'since_id': 'return only tweets since this id',
+	// 'max_id': 'return only tweets up to and including this id',
+	// 'count': 'number of tweets to retrieve',
+	// 'stringify_ids': 'return friend/follower ids as strings',
+	// 'trim_user': 'truncate returned user objects',
+	// 'post': 'send POST request instead of GET',
 
-// console.log(util.inspect(argv));
+const Arghs = require('../lib/arghs.js');
+var argv = new Arghs({
+	named: ['path'],
+	options: ['user_id', 'screen_name', 'id', 'since_id', 'max_id', 'count'],
+	flags: ['default_user', 'stringify_ids', 'trim_user', 'post'],
+	aliases: {
+		'd': 'default_user',
+		'u': 'user_id',
+		'n': 'screen_name',
+		'i': 'id',
+		's': 'since_id',
+		'm': 'max_id',
+		'c': 'count',
+		'g': 'stringify_ids',
+		't': 'trim_user',
+		'p': 'post'
+	}
+}).parse();
 
 const _ = require('lodash');
 const Twitter = require('twitter');
@@ -113,36 +58,42 @@ const twitcfg = _.defaultsDeep(
 	require('../cfg/consumer.json')
 );
 const twit = new Twitter(twitcfg);
-const paramnames = ['since_id', 'max_id', 'count', 'stringify_ids', 'trim_user'];
 
 var params = {};
 
-if (argv.screen_name) {
-	params.screen_name = (_.isArray(argv.screen_name)) ? argv.screen_name.join(',') : argv.screen_name;
+// Separate path from params
+var apipath = argv.path;
+delete argv.path;
+
+// Check for conflicting user/name options
+if (argv.default_user) {
+	if (argv.user_id || argv.screen_name) {
+		throw new Error('Cannot specify more than one of default_user, user_id, and screen_name options');
+	}
+	argv.user_id = appcfg.user.id_str;
+	delete argv.default_user;
 }
-else if (argv.user_id) {
-	params.user_id = (_.isArray(argv.user_id)) ? argv.user_id.join(',') : argv.user_id;
-}
-else if (argv.default_user) {
-	params.user_id = appcfg.user.id_str;
+else if (argv.user_id && argv.screen_name) {
+	throw new Error('Cannot specify more than one of default_user, user_id, and screen_name options');
 }
 
-if (argv.id) {
-	params.id = (_.isArray(argv.id)) ? argv.id.join(',') : argv.id;
-}
-
-// Check/include other options
-for (let name of paramnames) {
-	if (argv[name]) {
-		params[name] = argv[name];
+// Join multiply-given options
+for (let arg of Object.keys(argv)) {
+	if (_.isArray(argv[arg])) {
+		argv[arg] = argv[arg].join(',');
 	}
 }
 
-// console.log(`Path: ${argv._[0]}`);
-// console.log(`Params:`, util.inspect(params));
+// Add in extra args
+for (let extra of Object.keys(argv.$)) {
+	argv[extra] = _.isArray(argv.$[extra]) ? argv.$[extra].join(',') : argv.$[extra];
+}
+
+// console.log(`Path: ${apipath}`);
+// console.log(`Params:`, util.inspect(argv));
 
 // GO
-twit.get(argv._[0], params).then(
+twit.get(apipath, argv).then(
 	data => {
 		process.stdout.write(JSON.stringify(data, null, 2) + '\n');
 	},
