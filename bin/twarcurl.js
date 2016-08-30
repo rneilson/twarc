@@ -5,17 +5,6 @@ const util = require('util');
 util.inspect.defaultOptions.colors = true;
 util.inspect.defaultOptions.depth = null;
 
-	// 'default_user': 'use default user_id for request',
-	// 'user_id': 'use this user_id for request',
-	// 'screen_name': 'use this screen_name for request',
-	// 'id': 'use this item id for request',
-	// 'since_id': 'return only tweets since this id',
-	// 'max_id': 'return only tweets up to and including this id',
-	// 'count': 'number of tweets to retrieve',
-	// 'stringify_ids': 'return friend/follower ids as strings',
-	// 'trim_user': 'truncate returned user objects',
-	// 'post': 'send POST request instead of GET',
-
 const Arghs = require('../lib/arghs.js');
 var argv = new Arghs({
 	named: ['path'],
@@ -57,7 +46,8 @@ var argv = new Arghs({
 		'trim_user': 'truncate returned user objects',
 		'post': 'send POST request instead of GET',
 		'verbose': 'show additional information for each invocation'
-	}
+	},
+	usage: 'Usage: $1 [OPTIONS...] <PATH>\nMake Twitter API request to PATH'
 }).parse();
 
 const _ = require('lodash');
