@@ -5,7 +5,7 @@ const util = require('util');
 util.inspect.defaultOptions.colors = true;
 util.inspect.defaultOptions.depth = null;
 
-const Arghs = require('../lib/arghs.js');
+const Arghs = require('arghs');
 var argv = new Arghs({
 	named: ['path'],
 	options: {
