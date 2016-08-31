@@ -34,6 +34,7 @@ var argv = new Arghs({
 		'p': 'post',
 		'v': 'verbose'
 	},
+	usage: 'Usage: $1 [OPTIONS...] <PATH>\nMake Twitter API request to PATH',
 	help: {
 		'default_user': 'use configured user_id for request',
 		'user_id': 'use user_id(s) for request',
@@ -47,7 +48,10 @@ var argv = new Arghs({
 		'post': 'send POST request instead of GET',
 		'verbose': 'show additional information for each invocation'
 	},
-	usage: 'Usage: $1 [OPTIONS...] <PATH>\nMake Twitter API request to PATH'
+	strict: {
+		invalid: true,
+		unnamed: true
+	}
 }).parse();
 
 const _ = require('lodash');
