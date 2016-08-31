@@ -49,8 +49,9 @@ var argv = new Arghs({
 		'verbose': 'show additional information for each invocation'
 	},
 	strict: {
-		invalid: true,
-		unnamed: true
+		named: true,
+		unnamed: true,
+		invalid: true
 	}
 }).parse();
 
