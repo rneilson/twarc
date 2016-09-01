@@ -84,12 +84,12 @@
 					"quoted": false
 				},
 				"of_followed": {
-					"source": false,
-					"quoted": false
+					"source": true,
+					"quoted": true
 				},
 				"of_other": {
-					"source": false,
-					"quoted": false
+					"source": true,
+					"quoted": true
 				}
 			},
 			"reply": {
