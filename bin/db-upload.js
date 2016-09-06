@@ -5,7 +5,7 @@ const _ = require('lodash');
 const fs = require('fs');
 const path = require('path');
 const ipc = require('node-ipc');
-const itertick = require('../lib/itertick.js');
+const iterwait = require('../lib/iterwait.js');
 
 // Config
 const appcfg = _.defaultsDeep(
@@ -40,7 +40,7 @@ ipc.connectTo('writer', () => {
 	});
 	ipc.of.writer.on('connect', () => {
 		console.log(`Connected to writer process`);
-		itertick(filenames, loadfile).then(
+		iterwait(filenames, loadfile).then(
 			() => {
 				console.log('Finished, disconnecting...');
 				return 0;
@@ -75,7 +75,7 @@ function loadfile (name) {
 
 	// Send queue to writer process
 	// Don't *actually* want to try/catch here, so it'll reject the
-	// itertick promise if there's a connection error while sending
+	// iterwait promise if there's a connection error while sending
 	if (send) {
 		if (!ipc.of.writer) {
 			throw new Error('Writer process not available')
