@@ -6,6 +6,7 @@ const path = require('path');
 const util = require('util');
 const lmdb = require('../node-lmdb');
 const Filters = require('../lib/filters.js');
+const DBReader = require('../lib/dbread.js');
 
 // Find base directory for consistency
 const basedir = path.resolve(__dirname, '..');
@@ -21,28 +22,19 @@ const appcfg = _.defaultsDeep(
 const filters = new Filters(appcfg);
 
 // LMDB
-var dbe = new lmdb.Env();
-dbe.open({
+var dbr = new DBReader({
 	path: path.isAbsolute(appcfg.dbpath) ? appcfg.dbpath : path.resolve(basedir, appcfg.dbpath),
-	mapSize: 1 * 1024 * 1024 * 1024,	// 1 GiB
-	maxDbs: 10
+	user_id_str: appcfg.user.id_str
 });
-const dbs = {};
-const names = ['status', 'users', 'screennames', 'tweets', 'userdates', 'otherdates', 'favids', 'favdates', 'urls', 'media'];
-for (let name of names) {
-	dbs[name] = dbe.openDbi({name, create: true});
-}
 
 var txn, cur, key, val, acc, writer, prefix = '';
 
 // TEMP
 // Print db stats to console
-txn = dbe.beginTxn({readOnly: true});
-for (let db of names) {
-	// console.log(`\nDB stats for ${db}:`);
-	// console.dir(dbs[db].stat(txn));
-	process.stderr.write(`\nDB stats for ${db}:\n`);
-	process.stderr.write(util.inspect(dbs[db].stat(txn), {colors:true}) + '\n');
+txn = dbr.begin();
+for (let name of DBReader.dbnamelist()) {
+	process.stderr.write(`\nDB stats for ${name}:\n`);
+	process.stderr.write(util.inspect(dbr.dbs[name].stat(txn), {colors:true}) + '\n');
 }
 txn.commit();
 
@@ -52,8 +44,8 @@ process.stdout.write('[\n');
 
 
 // Output status
-txn = dbe.beginTxn({readOnly: true});
-cur = new lmdb.Cursor(txn, dbs.status);
+txn = dbr.begin();
+cur = new lmdb.Cursor(txn, dbr.dbs.status);
 
 acc = {};
 writer = (k, v) => _.set(acc, k, JSON.parse(v.toString()));
@@ -69,8 +61,8 @@ txn.commit();
 
 
 // Output users
-txn = dbe.beginTxn({readOnly: true});
-cur = new lmdb.Cursor(txn, dbs.users);
+txn = dbr.begin();
+cur = new lmdb.Cursor(txn, dbr.dbs.users);
 
 writer = (k, v) => writefn('user', JSON.parse(v.toString()));
 
@@ -83,8 +75,8 @@ txn.commit();
 
 
 // Output tweets
-txn = dbe.beginTxn({readOnly: true});
-cur = new lmdb.Cursor(txn, dbs.tweets);
+txn = dbr.begin();
+cur = new lmdb.Cursor(txn, dbr.dbs.tweets);
 
 writer = (k, v) => {
 	let t = JSON.parse(v.toString());
@@ -110,8 +102,8 @@ txn.commit();
 
 
 // Output favorites
-txn = dbe.beginTxn({readOnly: true});
-cur = new lmdb.Cursor(txn, dbs.favids);
+txn = dbr.begin();
+cur = new lmdb.Cursor(txn, dbr.dbs.favids);
 
 writer = (k, v) => writefn('favorite', {id_str: k, time: parseInt(v)});
 
@@ -124,20 +116,17 @@ txn.commit();
 
 
 // Output indices
-writeindex(dbs.screennames, 'user_index');
-writeindex(dbs.userdates, 'user_tweet_index');
-writeindex(dbs.otherdates, 'other_tweet_index');
-writeindex(dbs.favdates, 'favorite_index');
+writeindex(dbr.dbs.names, 'user_index');
+writeindex(dbr.dbs.userdates, 'user_tweet_index');
+writeindex(dbr.dbs.otherdates, 'other_tweet_index');
+writeindex(dbr.dbs.favdates, 'favorite_index');
+writeindex(dbr.dbs.refs, 'reference_index');
 
 
 // Output trailing ']'
 process.stdout.write('\n]\n');
 
-// Close dbs
-for (let name of names) {
-	dbs[name].close();
-}
-dbe.close();
+dbr.close();
 
 
 function writefn (type, data) {
@@ -148,7 +137,7 @@ function writefn (type, data) {
 }
 
 function writeindex (db, type) {
-	txn = dbe.beginTxn({readOnly: true});
+	txn = dbr.begin();
 	cur = new lmdb.Cursor(txn, db);
 
 	key = cur.goToFirst();
