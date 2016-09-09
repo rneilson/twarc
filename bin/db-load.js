@@ -14,9 +14,8 @@ const appcfg = _.defaultsDeep(
 );
 
 // DB
-const dbpath = path.isAbsolute(appcfg.dbpath) ? appcfg.dbpath : path.resolve(__dirname, '..', appcfg.dbpath);
 const dbw = new DBWriter({
-	path: dbpath,
+	path: path.isAbsolute(appcfg.dbpath) ? appcfg.dbpath : path.resolve(__dirname, '..', appcfg.dbpath),
 	user_id_str: appcfg.user.id_str,
 	// noSync: true
 });
@@ -42,7 +41,7 @@ console.log('Finished!');
 
 // Funcs
 function loadfile (name) {
-	const types = ['user', 'user_tweet', 'other_tweet', 'delete', 'favorite', 'unfavorite'];
+	const types = DBWriter.itemtypes();
 	let filename = path.resolve(name);
 
 	try {
