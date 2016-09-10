@@ -48,8 +48,6 @@ txn = dbr.begin();
 cur = new lmdb.Cursor(txn, dbr.dbs.status);
 
 acc = {};
-// writer = (k, v) => _.set(acc, k, JSON.parse(v.toString()));
-
 for (key = cur.goToFirst(); key; key = cur.goToNext()) {
 	// cur.getCurrentBinaryUnsafe(writer);
 	_.set(acc, key, JSON.parse(cur.getCurrentBinaryUnsafe().toString()));
@@ -65,8 +63,6 @@ txn.commit();
 txn = dbr.begin();
 cur = new lmdb.Cursor(txn, dbr.dbs.users);
 
-// writer = (k, v) => writefn('user', JSON.parse(v.toString()));
-
 for (key = cur.goToFirst(); key; key = cur.goToNext()) {
 	// cur.getCurrentBinaryUnsafe(writer);
 	writefn('user', JSON.parse(cur.getCurrentBinaryUnsafe().toString()));
@@ -79,21 +75,6 @@ txn.commit();
 // Output tweets
 txn = dbr.begin();
 cur = new lmdb.Cursor(txn, dbr.dbs.tweets);
-
-// writer = (k, v) => {
-// 	let t = JSON.parse(v.toString());
-// 	if (t.deleted) {
-// 		// Convert from stored format to broadcast format
-// 		writefn('delete', {
-// 			id_str: t.id_str,
-// 			user_id_str: t.user.id_str,
-// 			time: t.deleted
-// 		});
-// 	}
-// 	else {
-// 		writefn(filters.user(t.user) ? 'user_tweet' : 'other_tweet', t);
-// 	}
-// };
 
 for (key = cur.goToFirst(); key; key = cur.goToNext()) {
 	// cur.getCurrentBinaryUnsafe(writer);
@@ -118,8 +99,6 @@ txn.commit();
 // Output favorites
 txn = dbr.begin();
 cur = new lmdb.Cursor(txn, dbr.dbs.favids);
-
-// writer = (k, v) => writefn('favorite', {id_str: k, time: parseInt(v)});
 
 for (key = cur.goToFirst(); key; key = cur.goToNext()) {
 	// cur.getCurrentString(writer);
@@ -155,37 +134,21 @@ function writeindex (db, type) {
 	txn = dbr.begin();
 	cur = new lmdb.Cursor(txn, db);
 
-	let k = cur.goToFirst();
-	if (k !== null) {
-		// cur.getCurrentString((k, v) => {
-		// 	if (!v.startsWith('[')) {
-		// 		v = `"${v}"`;
-		// 	}
-		// 	str = prefix + `{\n  "type": "${type}",\n  "data": {\n    "${k}": ${v}`;
-		// });
-		let v = cur.getCurrentString();
-		if (!v.startsWith('[')) {
-			v = `"${v}"`;
+	let res = [];
+	key = cur.goToFirst();
+	while (key) {
+		while (key) {
+			let val = cur.getCurrentString();
+			res.push(`"${key}": "${val}"`);
+			key = cur.goToNextDup();
 		}
-		let str = prefix + `{\n  "type": "${type}",\n  "data": {\n    "${k}": ${v}`;
-
-		while (k = cur.goToNext()) {
-			// cur.getCurrentString((k, v) => {
-			// 	if (!v.startsWith('[')) {
-			// 		v = `"${v}"`;
-			// 	}
-			// 	str += `,\n    "${k}": ${v}`;
-			// });
-			let v = cur.getCurrentString();
-			if (!v.startsWith('[')) {
-				v = `"${v}"`;
-			}
-			str += `,\n    "${k}": ${v}`;
-		}
-
-		str += `\n  }\n}`;
-		process.stdout.write(str);
+		key = cur.goToNext();
 	}
+
+	let str = prefix + `{\n  "type": "${type}",\n  "data": {\n    `;
+	str += res.join(',\n    ');
+	str += `\n  }\n}`;
+	process.stdout.write(str);
 
 	cur.close();
 	txn.commit();
