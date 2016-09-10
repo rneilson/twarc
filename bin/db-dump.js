@@ -44,41 +44,19 @@ process.stdout.write('[\n');
 
 
 // Output status
-txn = dbr.begin();
-cur = new lmdb.Cursor(txn, dbr.dbs.status);
-
 acc = {};
-for (key = cur.goToFirst(); key; key = cur.goToNext()) {
-	// cur.getCurrentBinaryUnsafe(writer);
-	_.set(acc, key, JSON.parse(cur.getCurrentBinaryUnsafe().toString()));
+for (let [k, v] of dbr.dbs.status.entries()) {
+	_.set(acc, k, v);
 }
-
 writefn('status_raw', acc);
 
-cur.close();
-txn.commit();
-
-
 // Output users
-txn = dbr.begin();
-cur = new lmdb.Cursor(txn, dbr.dbs.users);
-
-for (key = cur.goToFirst(); key; key = cur.goToNext()) {
-	// cur.getCurrentBinaryUnsafe(writer);
-	writefn('user', JSON.parse(cur.getCurrentBinaryUnsafe().toString()));
+for (let u of dbr.dbs.users.values()) {
+	writefn('user', u);
 }
 
-cur.close();
-txn.commit();
-
-
 // Output tweets
-txn = dbr.begin();
-cur = new lmdb.Cursor(txn, dbr.dbs.tweets);
-
-for (key = cur.goToFirst(); key; key = cur.goToNext()) {
-	// cur.getCurrentBinaryUnsafe(writer);
-	let t = JSON.parse(cur.getCurrentBinaryUnsafe().toString());
+for (let t of dbr.dbs.tweets.values()) {
 	if (t.deleted) {
 		// Convert from stored format to broadcast format
 		writefn('delete', {
@@ -92,30 +70,17 @@ for (key = cur.goToFirst(); key; key = cur.goToNext()) {
 	}
 }
 
-cur.close();
-txn.commit();
-
-
 // Output favorites
-txn = dbr.begin();
-cur = new lmdb.Cursor(txn, dbr.dbs.favids);
-
-for (key = cur.goToFirst(); key; key = cur.goToNext()) {
-	// cur.getCurrentString(writer);
-	writefn('favorite', {id_str: key, time: parseInt(cur.getCurrentString())})
+for (let [k, t] of dbr.dbs.favids.entries()) {
+	writefn('favorite', {id_str: k, time: t});
 }
 
-cur.close();
-txn.commit();
-
-
 // Output indices
-writeindex(dbr.dbs.names, 'user_index');
-writeindex(dbr.dbs.userdates, 'user_tweet_index');
-writeindex(dbr.dbs.otherdates, 'other_tweet_index');
-writeindex(dbr.dbs.favdates, 'favorite_index');
-writeindex(dbr.dbs.refs, 'reference_index');
-
+writeindex(dbr.dbs.names, 'index_user_names');
+writeindex(dbr.dbs.userdates, 'index_user_tweet_dates');
+writeindex(dbr.dbs.otherdates, 'index_other_tweet_dates');
+writeindex(dbr.dbs.favdates, 'index_favorite_dates');
+writeindex(dbr.dbs.refs, 'index_references');
 
 // Output trailing ']'
 process.stdout.write('\n]\n');
