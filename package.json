@@ -21,7 +21,7 @@
     "node-fetch": "^1.6.0",
     "node-ipc": "^8.1.0",
     "rnr": "^0.5.0",
-    "twitter": "https://github.com/rneilson/node-twitter/archive/v1.4.0-rn3.tar.gz",
+    "twitter": "rneilson/node-twitter#custom",
     "node-lmdb": "rneilson/node-lmdb#enhanced"
   }
 }
