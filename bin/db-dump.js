@@ -43,13 +43,6 @@ process.stdout.write('[\n');
 // TODO: output leading log summary
 
 
-// Output status
-acc = {};
-for (let [k, v] of dbr.dbs.status.entries()) {
-	_.set(acc, k, v);
-}
-writefn('status_raw', acc);
-
 // Output users
 for (let u of dbr.dbs.users.values()) {
 	writefn('user', u);
@@ -86,6 +79,13 @@ for (let db of dbr.indices) {
 
 	process.stdout.write(prefix + `{\n  "type": "${type}",\n  "data": {\n    ` + res.join(',\n    ') + '\n  }\n}');
 }
+
+// Output status
+acc = {};
+for (let [k, v] of dbr.dbs.status.entries()) {
+	_.set(acc, k, v);
+}
+writefn('status_raw', acc);
 
 // Output trailing ']'
 process.stdout.write('\n]\n');
