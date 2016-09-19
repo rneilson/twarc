@@ -76,11 +76,16 @@ for (let [k, t] of dbr.dbs.favids.entries()) {
 }
 
 // Output indices
-writeindex(dbr.dbs.names, 'index_user_names');
-writeindex(dbr.dbs.userdates, 'index_user_tweet_dates');
-writeindex(dbr.dbs.otherdates, 'index_other_tweet_dates');
-writeindex(dbr.dbs.favdates, 'index_favorite_dates');
-writeindex(dbr.dbs.refs, 'index_references');
+for (let db of dbr.indices) {
+	let res = [];
+	let type = 'index_' + db.name;
+
+	for (let [k, v] of db.entries()) {
+		res.push(`"${k}": "${v}"`);
+	}
+
+	process.stdout.write(prefix + `{\n  "type": "${type}",\n  "data": {\n    ` + res.join(',\n    ') + '\n  }\n}');
+}
 
 // Output trailing ']'
 process.stdout.write('\n]\n');
@@ -93,28 +98,4 @@ function writefn (type, data) {
 	if (!prefix) {
 		prefix = ',\n';
 	}
-}
-
-function writeindex (db, type) {
-	txn = dbr.begin();
-	cur = new lmdb.Cursor(txn, db);
-
-	let res = [];
-	key = cur.goToFirst();
-	while (key) {
-		while (key) {
-			let val = cur.getCurrentString();
-			res.push(`"${key}": "${val}"`);
-			key = cur.goToNextDup();
-		}
-		key = cur.goToNext();
-	}
-
-	let str = prefix + `{\n  "type": "${type}",\n  "data": {\n    `;
-	str += res.join(',\n    ');
-	str += `\n  }\n}`;
-	process.stdout.write(str);
-
-	cur.close();
-	txn.commit();
 }
