@@ -109,6 +109,11 @@ for (let extra of Object.keys(argv.$)) {
 	argv[extra] = _.isArray(argv.$[extra]) ? argv.$[extra].join(',') : argv.$[extra];
 }
 
+// Get extended by default, unless overridden
+if (!_.has(argv, 'tweet_mode')) {
+	argv.tweet_mode = 'extended';
+}
+
 if (argv.verbose) {
 	delete argv.verbose;
 	console.error(`Path: ${apipath}`);
