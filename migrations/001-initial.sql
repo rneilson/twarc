@@ -12,13 +12,13 @@
 --  - Can convert datetime strings to timestamps (w/o ms) using:
 --    strftime('%s', dt)*1000 - strftime('%S', dt)*1000 + strftime('%f', dt)*1000
 
-CREATE TABLE status (
+CREATE TABLE config (
   key TEXT PRIMARY KEY NOT NULL,
   value TEXT,
   timestamp_ms INTEGER
 );
 -- Check before insert, must equal 0:
---  SELECT count(key) AS keys FROM status WHERE ? LIKE (key || '.%')
+--  SELECT count(key) AS keys FROM config WHERE ? LIKE (key || '.%')
 
 
 CREATE TABLE tweet (
