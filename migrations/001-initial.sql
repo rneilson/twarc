@@ -13,12 +13,12 @@
 --    strftime('%s', dt)*1000 - strftime('%S', dt)*1000 + strftime('%f', dt)*1000
 
 CREATE TABLE status (
-  name TEXT PRIMARY KEY NOT NULL,
+  key TEXT PRIMARY KEY NOT NULL,
   value TEXT,
   timestamp_ms INTEGER
 );
 -- Check before insert, must equal 0:
---  SELECT count(name) AS names FROM status WHERE ? LIKE (name || '.%')
+--  SELECT count(key) AS keys FROM status WHERE ? LIKE (key || '.%')
 
 
 CREATE TABLE tweet (
