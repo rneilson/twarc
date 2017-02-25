@@ -12,10 +12,11 @@ CREATE TABLE log_type (
 );
 INSERT INTO log_type (code, label, description, to_db, to_file, to_console) VALUES
   (0, 'error', 'Error', 1, 1, 1),
-  (1, 'warning', 'Warning', 1, 1, 1),
-  (2, 'info', 'Information', 1, 1, 1),
-  (3, 'output', 'Process output', 0, 0, 1),
-  (4, 'debug', 'Debug output', 0, 0, 0);
+  (1, 'warning', 'Warning', 0, 1, 1),
+  (2, 'event', 'Event', 1, 1, 1),
+  (3, 'info', 'Information', 0, 1, 1),
+  (4, 'display', 'Display', 0, 0, 1),
+  (5, 'debug', 'Debug', 0, 0, 0);
 
 
 CREATE TABLE log_data (
