@@ -8,9 +8,9 @@
 --    - Not all tweets will be fetched/saved
 --    - Not all users will have full details when encountered
 --  - Can convert timestamps to ISO datetime strings using:
---    strftime('%Y-%m-%dT%H:%M:%fZ', CAST(timestamp_ms AS REAL)/1000, 'unixepoch')
+--      strftime('%Y-%m-%dT%H:%M:%fZ', CAST(timestamp_ms AS REAL)/1000, 'unixepoch')
 --  - Can convert datetime strings to timestamps (w/o ms) using:
---    strftime('%s', dt)*1000 - strftime('%S', dt)*1000 + strftime('%f', dt)*1000
+--      strftime('%s', dt)*1000 - strftime('%S', dt)*1000 + strftime('%f', dt)*1000
 
 CREATE TABLE config (
   key TEXT PRIMARY KEY NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE tweet (
   retweeted_id INTEGER,
   quoted_id INTEGER,
   full_text TEXT,
-  object TEXT,
+  json JSON,
   timestamp_ms INTEGER NOT NULL
 );
 CREATE INDEX idx_tweet_by_time ON tweet (timestamp_ms DESC);
@@ -48,7 +48,7 @@ CREATE TABLE user (
   id INTEGER PRIMARY KEY,
   screen_name TEXT,
   name TEXT,
-  object TEXT,
+  json JSON,
   timestamp_ms INTEGER NOT NULL
 );
 CREATE INDEX idx_user_by_screen_name ON user (screen_name);

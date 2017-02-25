@@ -44,7 +44,7 @@ CREATE INDEX idx_mention_quote_by_time
 
 CREATE TABLE deleted (
   id INTEGER PRIMARY KEY,
-  object TEXT,
+  json JSON,
   timestamp_ms INTEGER NOT NULL
 );
 
