@@ -54,17 +54,26 @@ CREATE TABLE user (
 CREATE INDEX idx_user_by_screen_name ON user (screen_name);
 CREATE INDEX idx_user_by_name ON user (name);
 
+
+CREATE TABLE favorite (
+  tweet_id INTEGER PRIMARY KEY,
+  timestamp_ms INTEGER NOT NULL
+);
+CREATE INDEX idx_favorite_by_time ON favorite (timestamp_ms DESC);
+
 --------
 -- Down
 --------
 
-DROP TABLE status;
-DROP INDEX idx_tweet_by_time;
-DROP INDEX idx_tweet_by_user_by_time;
-DROP INDEX idx_tweet_in_reply_to_by_time;
-DROP INDEX idx_tweet_retweeted_by_time;
-DROP INDEX idx_tweet_quoted_by_time;
-DROP TABLE tweet;
+DROP INDEX idx_favorite_by_time;
+DROP TABLE favorite;
 DROP INDEX idx_user_by_screen_name;
 DROP INDEX idx_user_by_name;
 DROP TABLE user;
+DROP INDEX idx_tweet_quoted_by_time;
+DROP INDEX idx_tweet_retweeted_by_time;
+DROP INDEX idx_tweet_in_reply_to_by_time;
+DROP INDEX idx_tweet_by_user_by_time;
+DROP INDEX idx_tweet_by_time;
+DROP TABLE tweet;
+DROP TABLE status;
