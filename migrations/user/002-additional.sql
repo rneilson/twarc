@@ -52,12 +52,13 @@ CREATE TABLE deleted (
 -- Down
 --------
 
+DROP TABLE deleted;
+DROP INDEX idx_mention_quote_by_time;
+DROP INDEX idx_mention_retweet_by_time;
+DROP INDEX idx_mention_reply_by_time;
+DROP INDEX idx_mention_of_user_by_time;
+DROP INDEX idx_mention_by_user_by_time;
+DROP TABLE mention;
+DROP INDEX idx_alias_by_user_by_time;
 DROP INDEX idx_alias_by_screen_name;
 DROP TABLE alias;
-DROP INDEX idx_mention_by_user_by_time;
-DROP INDEX idx_mention_of_user_by_time;
-DROP INDEX idx_mention_reply_by_time;
-DROP INDEX idx_mention_retweet_by_time;
-DROP INDEX idx_mention_quote_by_time;
-DROP TABLE mention;
-DROP TABLE deleted;
