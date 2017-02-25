@@ -62,7 +62,7 @@ CREATE INDEX idx_mention_quote_by_time
   WHERE quoted_user_id IS NOT NULL;
 CREATE TRIGGER tri_update_mention_on_tweet_timestamp_update
   AFTER UPDATE OF timestamp_ms ON tweet
-  WHEN new.timestamp_ms > old.timestamp_ms
+  WHEN new.timestamp_ms != old.timestamp_ms
   BEGIN
     UPDATE mention SET timestamp_ms = new.timestamp_ms
     WHERE tweet_id = new.id;
