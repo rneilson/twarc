@@ -11,6 +11,7 @@ CREATE TABLE config (
 
 CREATE TABLE user_db (
   id INTEGER PRIMARY KEY,
+  name TEXT,
   screen_name TEXT,
   db_path TEXT,
   access_token_key TEXT,

@@ -93,6 +93,7 @@ INSERT INTO config (key, value) VALUES
   ('timeline.user.max_id', NULL),
   ('timeline.user.since_id', NULL),
   ('user.id_str', NULL),
+  ('user.name', NULL),
   ('user.screen_name', NULL);
 
 --------
