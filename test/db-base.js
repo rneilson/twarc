@@ -137,7 +137,6 @@ describe('BaseDB', function () {
 
     before(function () {
       db = new BaseDB('./test/data/db-base.db', {
-        create_file: true,
         single_conn: true
       });
 
@@ -251,6 +250,70 @@ describe('BaseDB', function () {
         });
       });
     });
+
+    it('should not update a value when undefined', function () {
+      return db.getconfig('app.test4').then((val) => {
+        expect(val).to.equal(10);
+      })
+      .then(() => db.setconfig(undefined, 'app.test4'))
+      .then((chg) => {
+        expect(recombine(chg, 'app.test4')).to.be.false;
+      })
+      .then(() => db.getconfig('app.test4'))
+      .then((val) => {
+        expect(val).to.equal(10);
+      })
+    });
+
+    after(function () {
+      return db.close();
+    });
+
+  });
+
+  describe.skip('delconfig()', function () {
+
+    let db;
+
+    before(function () {
+      db = new BaseDB('./test/data/db-base.db', {
+        single_conn: true
+      });
+
+      return db.db.migrate({migrationsPath: './test/migrations/db-base'});
+    });
+
+    it('should delete a single key', function () {
+      return db.getconfig('app.test1').then((val) => {
+        expect(val).to.be.true;
+      })
+      .then(() => db.delconfig('app.test1'))
+      .then((chg) => {
+        expect(recombine(chg, 'app.test1')).to.be.true;
+      })
+      .then(() => db.getconfig('app.test1'))
+      .then((val) => {
+        expect(val).to.be.undefined;
+      })
+      .then(() => db.getconfig('app'))
+      .then((val) => {
+        expect(val).to.deep.equal({
+          test2: false,
+          test3: null,
+          obj: {
+            test1: 'beep',
+            test2: 'boop',
+            test3: ['beep', 'boop']
+          }
+        });
+      });
+    });
+
+    it('should not delete a key when the existing time is later');
+
+    it('should delete multiple keys when given prefix');
+
+    it('should not delete any prefixed keys if any existing time is later');
 
     after(function () {
       return db.close();
