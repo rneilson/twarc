@@ -271,7 +271,7 @@ describe('BaseDB', function () {
 
   });
 
-  describe.skip('delconfig()', function () {
+  describe('delconfig()', function () {
 
     let db;
 
@@ -284,36 +284,92 @@ describe('BaseDB', function () {
     });
 
     it('should delete a single key', function () {
-      return db.getconfig('app.test1').then((val) => {
-        expect(val).to.be.true;
+      return db.getconfig('app.test4').then((val) => {
+        expect(val).to.equal(10);
       })
-      .then(() => db.delconfig('app.test1'))
+      .then(() => db.delconfig('app.test4'))
       .then((chg) => {
-        expect(recombine(chg, 'app.test1')).to.be.true;
+        expect(chg).to.be.true;
       })
-      .then(() => db.getconfig('app.test1'))
+      .then(() => db.getconfig('app.test4'))
       .then((val) => {
         expect(val).to.be.undefined;
       })
       .then(() => db.getconfig('app'))
       .then((val) => {
         expect(val).to.deep.equal({
+          test1: true,
           test2: false,
           test3: null,
           obj: {
-            test1: 'beep',
-            test2: 'boop',
-            test3: ['beep', 'boop']
+            test1: 'boop',
+            test2: 'beep',
+            test3: ['boop', 'beep']
           }
         });
       });
     });
 
-    it('should not delete a key when the existing time is later');
+    it('should not delete a key when the existing time is later', function () {
+      return db.getconfig('app.test1', true).then((val) => {
+        expect(val).to.deep.equal([true, 1488210932000]);
+      })
+      .then(() => db.delconfig('app.test1', 1488210931999))
+      .then((chg) => {
+        expect(chg).to.be.false;
+      })
+      .then(() => db.getconfig('app.test1', true))
+      .then((val) => {
+        expect(val).to.deep.equal([true, 1488210932000]);
+      });
+    });
 
-    it('should delete multiple keys when given prefix');
+    it('should delete multiple keys when given prefix', function () {
+      return db.getconfig('app').then((val) => {
+        expect(val).to.deep.equal({
+          test1: true,
+          test2: false,
+          test3: null,
+          obj: {
+            test1: 'boop',
+            test2: 'beep',
+            test3: ['boop', 'beep']
+          }
+        });
+      })
+      .then(() => db.delconfig('app.obj'))
+      .then((chg) => {
+        expect(chg).to.be.true;
+      })
+      .then(() => db.getconfig('app'))
+      .then((val) => {
+        expect(val).to.deep.equal({
+          test1: true,
+          test2: false,
+          test3: null
+        });
+      });
+    });
 
-    it('should not delete any prefixed keys if any existing time is later');
+    it('should not delete any prefixed keys if any time is later', function () {
+      return db.getconfig('dir').then((val) => {
+        expect(val).to.deep.equal({
+          test: './test/data/',
+          sql: './test/migrations/db-base/'
+        });
+      })
+      .then(() => db.delconfig('dir', 1488210932000))
+      .then((chg) => {
+        expect(chg).to.be.false;
+      })
+      .then(() => db.getconfig('dir'))
+      .then((val) => {
+        expect(val).to.deep.equal({
+          test: './test/data/',
+          sql: './test/migrations/db-base/'
+        });
+      });
+    });
 
     after(function () {
       return db.close();
