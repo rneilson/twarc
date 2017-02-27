@@ -20,7 +20,7 @@ INSERT INTO log_type (code, label, description, to_db, to_file, to_console) VALU
 
 
 CREATE TABLE log_data (
-  timestamp_ms INTEGER NOT NULL,
+  time_ms INTEGER NOT NULL,
   type_code INTEGER NOT NULL
     REFERENCES log_type(code)
     ON UPDATE CASCADE
@@ -32,9 +32,9 @@ CREATE TABLE log_data (
   proc_name TEXT,
   message TEXT NOT NULL
 );
-CREATE INDEX idx_log_data_by_time ON log_data(timestamp_ms DESC);
-CREATE INDEX idx_log_data_by_type_by_time ON log_data(type_code, timestamp_ms DESC);
-CREATE INDEX idx_log_data_by_user_by_time ON log_data(user_id, timestamp_ms DESC);
+CREATE INDEX idx_log_data_by_time ON log_data(time_ms DESC);
+CREATE INDEX idx_log_data_by_type_by_time ON log_data(type_code, time_ms DESC);
+CREATE INDEX idx_log_data_by_user_by_time ON log_data(user_id, time_ms DESC);
 
 --------
 -- Down

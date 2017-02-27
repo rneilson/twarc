@@ -5,7 +5,7 @@
 CREATE TABLE config (
   key TEXT PRIMARY KEY NOT NULL,
   value TEXT,
-  timestamp_ms INTEGER
+  time_ms INTEGER
 );
 
 
