@@ -4,7 +4,7 @@
   "description": "Personal Twitter archiver and API proxy",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "author": "Raymond Neilson <rneilson@interloper.ca> (https://github.com/rneilson)",
   "license": "Apache-2.0",
