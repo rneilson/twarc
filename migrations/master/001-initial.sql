@@ -16,7 +16,12 @@ CREATE TABLE user_db (
   db_path TEXT,
   access_token_key TEXT,
   access_token_secret TEXT,
-  is_active BOOLEAN,
+  is_active BOOLEAN CHECK(
+    is_active IS NULL OR
+    is_active = 0 OR
+    (access_token_key IS NOT NULL AND
+     access_token_secret IS NOT NULL)
+  ),
   last_opened_ms INTEGER
 );
 
