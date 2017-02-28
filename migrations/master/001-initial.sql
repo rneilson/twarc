@@ -24,9 +24,7 @@ CREATE TABLE user_db (
       (access_token_key IS NOT NULL AND
        access_token_secret IS NOT NULL)
     ),
-  last_opened_ms INTEGER,
-  created_ms INTEGER NOT NULL,
-  updated_ms INTEGER NOT NULL
+  last_opened_ms INTEGER
 );
 
 --------
