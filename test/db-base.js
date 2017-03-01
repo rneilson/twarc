@@ -287,7 +287,7 @@ describe('BaseDB', function () {
         })
         .then(() => db.del_config('app.test4'))
         .then((chg) => {
-          expect(chg).to.be.true;
+          expect(chg).to.equal('app.test4');
           expect(db.config.app).to.deep.equal(testcfg);
         })
         .then(() => db.get_config('app.test4'))
@@ -335,7 +335,9 @@ describe('BaseDB', function () {
         })
         .then(() => db.del_config('app.obj'))
         .then((chg) => {
-          expect(chg).to.be.true;
+          expect(chg).to.be.an.instanceof(Array);
+          const keys = Object.keys(testcfg.obj).map(k => 'app.obj.' + k).sort();
+          expect(chg.slice().sort()).to.deep.equal(keys);
           delete testcfg.obj;
           expect(db.config.app).to.deep.equal(testcfg);
         })
