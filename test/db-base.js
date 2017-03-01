@@ -373,13 +373,60 @@ describe('BaseDB', function () {
 
     describe('run_async()', function () {
 
-      it('should acquire a connection by default');
+      it('should acquire a connection by default', function () {
+        return db.run_async(function* (conn) {
+          expect(conn).to.have.property('driver');
+          yield;
+          expect(conn).to.have.property('_parent');
+          yield;
+          expect(conn._parent).to.be.null;
+        });
+      });
 
-      it('should start a transaction when start_trx is true');
+      it('should start a transaction when start_trx is true', function () {
+        return db.run_async(function* (trx) {
+          expect(trx).to.have.property('driver');
+          yield;
+          expect(trx).to.have.property('_parent');
+          yield;
+          expect(trx._parent).to.have.property('_trx');
+          yield;
+          expect(trx._parent._trx).to.equal(trx);
+        }, {start_trx: true});
+      });
 
-      it('should use a given existing transaction');
+      it('should use a given existing connection/transaction', function () {
+        return db.db.transaction(trx => db.run_async(
+          function* (_trx) {
+            expect(trx).to.have.property('driver');
+            yield;
+            expect(trx).to.have.property('_parent');
+            yield;
+            expect(_trx).to.have.property('driver');
+            yield;
+            expect(_trx).to.have.property('_parent');
+            yield;
+            expect(_trx).to.equal(trx);
+          },
+          { use_conn: trx }
+        ));
+      });
 
-      it('should use the base Sqlite object when use is false');
+      it('should use the base Sqlite object when use_conn is false', function () {
+        return db.run_async(
+          function* (base) {
+            expect(base).to.have.property('use');
+            expect(base.use).to.be.a('function');
+            yield;
+            expect(base).to.have.property('transaction');
+            expect(base.transaction).to.be.a('function');
+            yield;
+            expect(base).to.have.property('migrate');
+            expect(base.migrate).to.be.a('function');
+          },
+          { use_conn: false }
+        );
+      });
 
     });
 
