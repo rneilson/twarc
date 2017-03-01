@@ -89,36 +89,41 @@ describe('BaseDB', function () {
       it('should get a single value for a single key', function () {
         return db.get_config('app.test1').then((val) => {
           expect(val).to.be.true;
+          expect(db.config.app.test1).to.be.true;
         })
       });
 
       it('should get an object value for a key prefix', function () {
+        const testcfg = {
+          test: './test/',
+          sql: './test/migrations/db-base/'
+        };
         return db.get_config('dir').then((obj) => {
-          expect(obj).to.deep.equal({
-            test: './test/',
-            sql: './test/migrations/db-base/'
-          });
+          expect(obj).to.deep.equal(testcfg);
+          expect(db.config.dir).to.deep.equal(testcfg);
         });
       });
 
       it('should get all values as an object for an empty key', function () {
-        return db.get_config().then((obj) => {
-          expect(obj).to.deep.equal({
-            app: {
-              test1: true,
-              test2: false,
-              test3: null,
-              obj: {
-                test1: 'beep',
-                test2: 'boop',
-                test3: ['beep', 'boop']
-              }
-            },
-            dir: {
-              test: './test/',
-              sql: './test/migrations/db-base/'
+        const testcfg = {
+          app: {
+            test1: true,
+            test2: false,
+            test3: null,
+            obj: {
+              test1: 'beep',
+              test2: 'boop',
+              test3: ['beep', 'boop']
             }
-          });
+          },
+          dir: {
+            test: './test/',
+            sql: './test/migrations/db-base/'
+          }
+        };
+        return db.get_config().then((obj) => {
+          expect(obj).to.deep.equal(testcfg);
+          expect(db.config).to.deep.equal(testcfg);
         });
       });
 
@@ -133,38 +138,36 @@ describe('BaseDB', function () {
     describe('set_config()', function () {
 
       it('should update a single value for a single key', function () {
-        return db.set_config('./test/data/', 'dir.test').then((chg) => {
+        const testcfg = './test/data/';
+        return db.set_config(testcfg, 'dir.test').then((chg) => {
           expect(recombine(chg, 'dir.test')).to.be.true;
+          expect(db.config.dir.test).to.equal(testcfg);
         })
         .then(() => db.get_config('dir.test'))
         .then((val) => {
-          expect(val).to.equal('./test/data/');
+          expect(val).to.equal(testcfg);
+          expect(db.config.dir.test).to.equal(testcfg);
         });
       });
 
       it('should update multiple values for a prefix key', function () {
-        return db.set_config(
-          {
-            test1: 'boop',
-            test2: 'beep',
-            test3: ['boop', 'beep']
-          },
-          'app.obj'
-        )
-        .then((chg) => {
+        const testcfg = {
+          test1: 'boop',
+          test2: 'beep',
+          test3: ['boop', 'beep']
+        };
+        return db.set_config(testcfg, 'app.obj').then((chg) => {
           expect(recombine(chg, 'app.obj')).to.deep.equal({
             test1: true,
             test2: true,
             test3: true
           });
+          expect(db.config.app.obj).to.deep.equal(testcfg);
         })
         .then(() => db.get_config('app.obj'))
         .then((val) => {
-          expect(val).to.deep.equal({
-            test1: 'boop',
-            test2: 'beep',
-            test3: ['boop', 'beep']
-          });
+          expect(val).to.deep.equal(testcfg);
+          expect(db.config.app.obj).to.deep.equal(testcfg);
         });
       });
 
@@ -175,82 +178,92 @@ describe('BaseDB', function () {
         .then(() => db.set_config(10, 'app.test4'))
         .then((chg) => {
           expect(recombine(chg, 'app.test4')).to.be.true;
+          expect(db.config.app.test4).to.equal(10);
         })
         .then(() => db.get_config('app.test4'))
         .then((val) => {
           expect(val).to.equal(10);
+          expect(db.config.app.test4).to.equal(10);
         });
       });
 
       it('should insert multiple new keys for a new object value', function () {
+        const testcfg = {
+          beep: 2,
+          boop: '3'
+        };
         return db.get_config('test').then((val) => {
           expect(val).to.be.undefined;
+          expect(db.config.test).to.be.undefined;
         })
-        .then(() => db.set_config(
-          {
-            beep: 2,
-            boop: '3'
-          },
-          'test'
-        ))
+        .then(() => db.set_config(testcfg, 'test'))
         .then((chg) => {
           expect(recombine(chg, 'test')).to.deep.equal({
             beep: true,
             boop: true
           });
+          expect(db.config.test).to.deep.equal(testcfg);
         })
         .then(() => db.get_config('test'))
         .then((val) => {
-          expect(val).to.deep.equal({
-            beep: 2,
-            boop: '3'
-          });
+          expect(val).to.deep.equal(testcfg);
+          expect(db.config.test).to.deep.equal(testcfg);
         });
       });
 
       it('should not update a value when the existing time is later', function () {
         return db.set_config(1, 'app.test1', 1488210931999).then((chg) => {
           expect(recombine(chg, 'app.test1')).to.be.false;
+          expect(db.config.app.test1).to.be.true;
         })
         .then(() => db.get_config('app.test1', true))
         .then((val) => {
           expect(val).to.deep.equal([true, 1488210932000]);
+          expect(db.config.app.test1).to.be.true;
         })
         .then(() => db.set_config([1, 1488210931999], 'app.test1', true))
         .then((chg) => {
           expect(recombine(chg, 'app.test1')).to.be.false;
+          expect(db.config.app.test1).to.be.true;
         })
         .then(() => db.get_config('app.test1', true))
         .then((val) => {
           expect(val).to.deep.equal([true, 1488210932000]);
+          expect(db.config.app.test1).to.be.true;
         });
       });
 
       it('should not insert a key conflicting with existing prefix', function () {
+        const testcfg = {
+          beep: 2,
+          boop: '3'
+        };
         return db.set_config(5, 'test').catch((e) => {
           expect(e).to.be.an('error');
           expect(e.message).to.match(/already a prefix/i);
+          expect(db.config.test).to.deep.equal(testcfg);
         })
         .then(() => db.get_config('test'))
         .then((val) => {
-          expect(val).to.deep.equal({
-            beep: 2,
-            boop: '3'
-          });
+          expect(val).to.deep.equal(testcfg);
+          expect(db.config.test).to.deep.equal(testcfg);
         });
       });
 
       it('should not update a value when undefined', function () {
         return db.get_config('app.test4').then((val) => {
           expect(val).to.equal(10);
+          expect(db.config.app.test4).to.equal(10);
         })
         .then(() => db.set_config(undefined, 'app.test4'))
         .then((chg) => {
           expect(recombine(chg, 'app.test4')).to.be.false;
+          expect(db.config.app.test4).to.equal(10);
         })
         .then(() => db.get_config('app.test4'))
         .then((val) => {
           expect(val).to.equal(10);
+          expect(db.config.app.test4).to.equal(10);
         })
       });
 
@@ -259,29 +272,33 @@ describe('BaseDB', function () {
     describe('del_config()', function () {
 
       it('should delete a single key', function () {
+        const testcfg = {
+          test1: true,
+          test2: false,
+          test3: null,
+          obj: {
+            test1: 'boop',
+            test2: 'beep',
+            test3: ['boop', 'beep']
+          }
+        };
         return db.get_config('app.test4').then((val) => {
           expect(val).to.equal(10);
         })
         .then(() => db.del_config('app.test4'))
         .then((chg) => {
           expect(chg).to.be.true;
+          expect(db.config.app).to.deep.equal(testcfg);
         })
         .then(() => db.get_config('app.test4'))
         .then((val) => {
           expect(val).to.be.undefined;
+          expect(db.config.app.test4).to.be.undefined;
         })
         .then(() => db.get_config('app'))
         .then((val) => {
-          expect(val).to.deep.equal({
-            test1: true,
-            test2: false,
-            test3: null,
-            obj: {
-              test1: 'boop',
-              test2: 'beep',
-              test3: ['boop', 'beep']
-            }
-          });
+          expect(val).to.deep.equal(testcfg);
+          expect(db.config.app).to.deep.equal(testcfg);
         });
       });
 
@@ -292,57 +309,61 @@ describe('BaseDB', function () {
         .then(() => db.del_config('app.test1', 1488210931999))
         .then((chg) => {
           expect(chg).to.be.false;
+          expect(db.config.app.test1).to.be.true;
         })
         .then(() => db.get_config('app.test1', true))
         .then((val) => {
           expect(val).to.deep.equal([true, 1488210932000]);
+          expect(db.config.app.test1).to.be.true;
         });
       });
 
       it('should delete multiple keys when given prefix', function () {
+        const testcfg = {
+          test1: true,
+          test2: false,
+          test3: null,
+          obj: {
+            test1: 'boop',
+            test2: 'beep',
+            test3: ['boop', 'beep']
+          }
+        };
         return db.get_config('app').then((val) => {
-          expect(val).to.deep.equal({
-            test1: true,
-            test2: false,
-            test3: null,
-            obj: {
-              test1: 'boop',
-              test2: 'beep',
-              test3: ['boop', 'beep']
-            }
-          });
+          expect(val).to.deep.equal(testcfg);
+          expect(db.config.app).to.deep.equal(testcfg);
         })
         .then(() => db.del_config('app.obj'))
         .then((chg) => {
           expect(chg).to.be.true;
+          delete testcfg.obj;
+          expect(db.config.app).to.deep.equal(testcfg);
         })
         .then(() => db.get_config('app'))
         .then((val) => {
-          expect(val).to.deep.equal({
-            test1: true,
-            test2: false,
-            test3: null
-          });
+          expect(val).to.deep.equal(testcfg);
+          expect(db.config.app).to.deep.equal(testcfg);
         });
       });
 
       it('should not delete any prefixed keys if any time is later', function () {
+        const testcfg = {
+          test: './test/data/',
+          sql: './test/migrations/db-base/'
+        };
         return db.get_config('dir').then((val) => {
-          expect(val).to.deep.equal({
-            test: './test/data/',
-            sql: './test/migrations/db-base/'
-          });
+          expect(val).to.deep.equal(testcfg);
+          expect(db.config.dir).to.deep.equal(testcfg);
         })
         .then(() => db.del_config('dir', 1488210932000))
         .then((chg) => {
           expect(chg).to.be.false;
+          expect(db.config.dir).to.deep.equal(testcfg);
         })
         .then(() => db.get_config('dir'))
         .then((val) => {
-          expect(val).to.deep.equal({
-            test: './test/data/',
-            sql: './test/migrations/db-base/'
-          });
+          expect(val).to.deep.equal(testcfg);
+          expect(db.config.dir).to.deep.equal(testcfg);
         });
       });
 
