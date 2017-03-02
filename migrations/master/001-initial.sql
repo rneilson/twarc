@@ -14,15 +14,15 @@ CREATE TABLE user_db (
   name TEXT,
   screen_name TEXT,
   db_path TEXT,
-  access_token_key TEXT,
-  access_token_secret TEXT,
+  token_key TEXT,
+  token_secret TEXT,
   is_active BOOLEAN
     NOT NULL
     DEFAULT 0
     CHECK(
       NOT is_active OR
-      (access_token_key IS NOT NULL AND
-       access_token_secret IS NOT NULL)
+      (token_key IS NOT NULL AND
+       token_secret IS NOT NULL)
     ),
   last_opened_ms INTEGER
 );
