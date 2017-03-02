@@ -76,8 +76,7 @@ describe('MasterDB', function () {
       const p = master
         ? master.close()
         : Promise.resolve();
-      // return p.then(clean_db);
-      return p;
+      return p.then(clean_db);
     });
 
   });
