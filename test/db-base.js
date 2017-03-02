@@ -128,7 +128,7 @@ describe('BaseDB', function () {
       });
 
       it('should return a [value, time] array when time is true', function () {
-        return db.get_config('app.test1', true).then((val) => {
+        return db.get_config('app.test1', {times: true}).then((val) => {
           expect(val).to.deep.equal([true, 1488210932000]);
         });
       });
@@ -212,21 +212,21 @@ describe('BaseDB', function () {
       });
 
       it('should not update a value when the existing time is later', function () {
-        return db.set_config(1, 'app.test1', 1488210931999).then((chg) => {
+        return db.set_config(1, 'app.test1', {times: 1488210931999}).then((chg) => {
           expect(recombine(chg, 'app.test1')).to.be.false;
           expect(db.config.app.test1).to.be.true;
         })
-        .then(() => db.get_config('app.test1', true))
+        .then(() => db.get_config('app.test1', {times: true}))
         .then((val) => {
           expect(val).to.deep.equal([true, 1488210932000]);
           expect(db.config.app.test1).to.be.true;
         })
-        .then(() => db.set_config([1, 1488210931999], 'app.test1', true))
+        .then(() => db.set_config([1, 1488210931999], 'app.test1', {times: true}))
         .then((chg) => {
           expect(recombine(chg, 'app.test1')).to.be.false;
           expect(db.config.app.test1).to.be.true;
         })
-        .then(() => db.get_config('app.test1', true))
+        .then(() => db.get_config('app.test1', {times: true}))
         .then((val) => {
           expect(val).to.deep.equal([true, 1488210932000]);
           expect(db.config.app.test1).to.be.true;
@@ -303,15 +303,15 @@ describe('BaseDB', function () {
       });
 
       it('should not delete a key when the existing time is later', function () {
-        return db.get_config('app.test1', true).then((val) => {
+        return db.get_config('app.test1', {times: true}).then((val) => {
           expect(val).to.deep.equal([true, 1488210932000]);
         })
-        .then(() => db.del_config('app.test1', 1488210931999))
+        .then(() => db.del_config('app.test1', {times: 1488210931999}))
         .then((chg) => {
           expect(chg).to.be.false;
           expect(db.config.app.test1).to.be.true;
         })
-        .then(() => db.get_config('app.test1', true))
+        .then(() => db.get_config('app.test1', {times: true}))
         .then((val) => {
           expect(val).to.deep.equal([true, 1488210932000]);
           expect(db.config.app.test1).to.be.true;
@@ -357,7 +357,7 @@ describe('BaseDB', function () {
           expect(val).to.deep.equal(testcfg);
           expect(db.config.dir).to.deep.equal(testcfg);
         })
-        .then(() => db.del_config('dir', 1488210932000))
+        .then(() => db.del_config('dir', {times: 1488210932000}))
         .then((chg) => {
           expect(chg).to.be.false;
           expect(db.config.dir).to.deep.equal(testcfg);
