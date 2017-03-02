@@ -9,7 +9,7 @@ INSERT INTO config (key, value) VALUES
   ('dir.db', '"./data/db/"'),
   ('dir.log', '"./data/log/"'),
   ('dir.sock', '"./data/sock/"'),
-  ('log.default_type', '"output"'),
+  ('log.default_type', '"info"'),
   ('log.error.default_type', '"error"'),
   ('log.error.stack.to_db', 'false'),
   ('log.error.stack.to_file', 'true'),
