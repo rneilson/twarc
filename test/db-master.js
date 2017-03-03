@@ -83,9 +83,56 @@ describe('MasterDB', function () {
 
   describe('Instance methods', function () {
 
+    const user_err1 = 1;
+    const user_err2 = { not_an_id: 2 };
+    const user_err3 = { id_str: { not_an_id: true } };
+    const user1 = {
+      id_str: '123',
+      name: 'beep',
+      screen_name: '@beep'
+    };
+    const user2 = [
+      {
+        id_str: '456',
+        name: 'boop',
+        screen_name: '@boop',
+        db_path: '/test/boop',
+        token_key: 'beep-boop',
+        token_secret: 'shh-boop'
+      },
+      {
+        id: 789,
+        name: 'badoomp',
+        screen_name: '@badoomp',
+        db_path: '/test/badoomp'
+      }
+    ];
+    const users = [user1, ...user2].map((user) => {
+      const newuser = Object.assign({}, user);
+      if (newuser.id) {
+        newuser.id_str = String(newuser.id);
+        delete newuser.id;
+      }
+      const fields = [
+        'name',
+        'screen_name',
+        'db_path',
+        'token_key',
+        'token_secret'
+      ];
+      for (const field of fields) {
+        newuser[field] = newuser[field] || null;
+      }
+      return newuser;
+    });
+
     describe('new_user()', function () {});
 
     describe('user_data()', function () {});
+
+    describe('user_update()', function () {});
+
+    describe('user_delete()', function () {});
 
     describe('user_activate()', function () {});
 
