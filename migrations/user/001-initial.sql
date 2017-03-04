@@ -61,19 +61,11 @@ CREATE TABLE favorite (
   time_ms INTEGER NOT NULL
 );
 CREATE INDEX idx_favorite_by_time ON favorite (time_ms DESC);
-CREATE TRIGGER tri_update_favorite_on_tweet_timestamp_update
-  AFTER UPDATE OF time_ms ON tweet
-  WHEN new.time_ms != old.time_ms
-  BEGIN
-    UPDATE favorite SET time_ms = new.time_ms
-    WHERE tweet_id = new.id;
-  END;
 
 --------
 -- Down
 --------
 
-DROP TRIGGER tri_update_favorite_on_tweet_timestamp_update;
 DROP INDEX idx_favorite_by_time;
 DROP TABLE favorite;
 DROP INDEX idx_user_by_screen_name;
