@@ -26,6 +26,7 @@ CREATE TABLE tweet (
   id INTEGER PRIMARY KEY,
   user_id INTEGER NOT NULL,
   in_reply_to_id INTEGER,
+  in_reply_to_user_id INTEGER,
   retweeted_id INTEGER,
   quoted_id INTEGER,
   full_text TEXT,
@@ -37,6 +38,9 @@ CREATE INDEX idx_tweet_by_user_by_time ON tweet (user_id, time_ms DESC);
 CREATE INDEX idx_tweet_in_reply_to_by_time
   ON tweet (in_reply_to_id, time_ms)
   WHERE in_reply_to_id IS NOT NULL;
+CREATE INDEX idx_tweet_in_reply_to_user_by_user_by_time
+  ON tweet (in_reply_to_user_id, user_id, time_ms DESC)
+  WHERE in_reply_to_user_id IS NOT NULL;
 CREATE INDEX idx_tweet_retweeted_by_time
   ON tweet (retweeted_id, time_ms)
   WHERE retweeted_id IS NOT NULL;
@@ -73,6 +77,7 @@ DROP INDEX idx_user_by_name;
 DROP TABLE user;
 DROP INDEX idx_tweet_quoted_by_time;
 DROP INDEX idx_tweet_retweeted_by_time;
+DROP INDEX idx_tweet_in_reply_to_user_by_user_by_time;
 DROP INDEX idx_tweet_in_reply_to_by_time;
 DROP INDEX idx_tweet_by_user_by_time;
 DROP INDEX idx_tweet_by_time;
