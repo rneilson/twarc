@@ -178,7 +178,7 @@ iterwait((function* () {
 			return mgr.launch('./proc/twitter.js', childname, { addtoenv })
 			.then((proc) => {
 				proc.user_id_str = user.id_str;
-				return proc;
+				return mdb.user_activate(user.id_str).then(() => proc);
 			});
 		}));
 		mgr.log('All processes started');
