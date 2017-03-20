@@ -11,9 +11,7 @@ INSERT INTO config (key, value) VALUES
   ('dir.sock', '"./data/sock/"'),
   ('log.default_type', '"info"'),
   ('log.error.default_type', '"error"'),
-  ('log.error.stack.to_db', 'false'),
-  ('log.error.stack.to_file', 'true'),
-  ('log.error.stack.to_console', 'true'),
+  ('log.error.use_stack', 'true'),
   ('log.file.keep', 'true'),
   ('log.file.merge', 'true'),
   ('log.file.rotate', 'true');
