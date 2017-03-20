@@ -7,6 +7,7 @@ const _ = require('lodash');
 const iterwait = require('../lib/iterwait');
 const Manager = require('../lib/manager');
 const MasterDB = require('../lib/db-master');
+const pkg = require('../package.json');
 
 // Change to base directory for consistency
 const base_path = path.resolve(path.join(__dirname, '..'));
@@ -170,6 +171,8 @@ iterwait((function* () {
 				consumer_secret: mdb.config.app.consumer_secret,
 				access_token_key: user.token_key,
 				access_token_secret: user.token_secret,
+				app_name: mdb.config.app.name,
+				app_version: pkg.version,
 			};
 
 			return mgr.launch('./proc/twitter.js', childname, { addtoenv })
