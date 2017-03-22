@@ -159,6 +159,7 @@ process.on('SIGTERM', () => {
   }
 
   log.info('Caught signal, exiting...')
+  .then(() => udb.db.run(`PRAGMA wal_checkpoint`))
   .then(() => udb.close())
   .then(() => 0)
   .catch((e) => {
