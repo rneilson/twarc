@@ -26,6 +26,8 @@ function errcb (err) {
 	}
 }
 
+const stack_types = new Set(['error', 'warning']);
+
 // Kick off
 iterwait((function* () {
 	// TODO: accept alternate path as cmdline arg
@@ -44,7 +46,7 @@ iterwait((function* () {
 	// Logging functions
 	function logger (level, proc, message) {
 		const log_level = _.isObject(level) ? level : mdb.log_type.get(level);
-		const is_err = log_level.label === 'error';
+		const is_err = stack_types.has(log_level.label);
 		const use_stack = is_err && _.get(mdb.config, 'log.error.use_stack');
 		const msg_text = (msg) => {
 			if (is_err) {
@@ -63,10 +65,12 @@ iterwait((function* () {
 
 		const time = _.has(message, 'time') ? new Date(message.time) : new Date();
 		const proc_name = _.has(proc, 'name') ? proc.name : (proc || null);
+		const proc_text = `[${_.upperFirst(proc_name || 'Unknown')}] `;
+		const text = msg_text(message);
 
 		if (log_level.to_db) {
 			mdb.write_log(
-				msg_text(message),
+				text,
 				{
 					proc_name: (proc && proc.name) || null,
 					user_id: (proc && proc.user_id_str) || null,
@@ -77,23 +81,26 @@ iterwait((function* () {
 			.catch(errcb);
 		}
 		
-		// Process name as prefix
-		let msg = `${time.toISOString()} [${_.upperFirst(proc_name || 'Unknown')}] `;
-
-		// Add extra leading spaces due to prefix
-		msg += msg_text(message).split('\n').join('\n' + ' '.repeat(msg.length));
-
 		if (log_level.to_file) {
+			// Add timestamp
+			let msg = `${time.toISOString()} ${proc_text}`;
+
+			// Add extra leading spaces due to prefix
+			msg += text.split('\n').join('\n' + ' '.repeat(msg.length));
+
 			fs.appendFile(log_file, msg + '\n', errcb);
 		}
 
 		if (log_level.to_console) {
-			console[is_err ? 'error' : 'log'](msg);
+			console[is_err ? 'error' : 'log'](
+				proc_text + text.split('\n').join('\n' + ' '.repeat(proc_text.length))
+			);
 		}
 	}
 
 	const default_log_level = mdb.log_type.get(mdb.config.log.default_type);
 	const default_err_level = mdb.log_type.get(mdb.config.log.error.default_type);
+	const manager_log_level = mdb.log_type.get('notify') || default_log_level;
 
 	// Create process manager
 	const mgr = new Manager({
@@ -104,7 +111,7 @@ iterwait((function* () {
 		(msg, level) => {
 			const log_level = level
 				? _.isObject(level) ? level : mdb.log_type.get(level)
-				: default_log_level;
+				: manager_log_level;
 			logger(log_level, {name: 'Master'}, msg);
 		},
 		(msg, level) => {
@@ -176,10 +183,11 @@ iterwait((function* () {
 				app_version: pkg.version,
 			};
 
-			return mgr.launch('./proc/twitter.js', childname, { addtoenv })
+			return mdb.user_activate(user.id_str)
+			.then(() => mgr.launch('./proc/twitter.js', childname, { addtoenv }))
 			.then((proc) => {
 				proc.user_id_str = user.id_str;
-				return mdb.user_activate(user.id_str).then(() => proc);
+				return proc;
 			});
 		}));
 		mgr.log('All processes started');
