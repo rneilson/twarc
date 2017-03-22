@@ -159,8 +159,10 @@ process.on('SIGTERM', () => {
   }
 
   log.info('Caught signal, exiting...')
-  .then(() => udb.db.run(`PRAGMA wal_checkpoint`))
-  .then(() => udb.close())
+  .then(() => Promise.all([
+    udb.db.use(conn => conn.run(`PRAGMA wal_checkpoint`)),
+    udb.close(),
+  ]))
   .then(() => 0)
   .catch((e) => {
     console.error(e);
