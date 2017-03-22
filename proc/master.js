@@ -43,7 +43,7 @@ iterwait((function* () {
 
 	// Logging functions
 	function logger (level, proc, message) {
-		const log_level = _.isObject(level) : level ? mdb.log_types.get(level);
+		const log_level = _.isObject(level) ? level : mdb.log_type.get(level);
 		const is_err = log_level.label === 'error';
 		const use_stack = is_err && _.get(mdb.config, 'log.error.use_stack');
 		const msg_text = (msg) => {
@@ -92,8 +92,8 @@ iterwait((function* () {
 		}
 	}
 
-	const default_log_level = mdb.log_types.get(mdb.config.log.default_type);
-	const default_err_level = mdb.log_types.get(mdb.config.log.error.default_type);
+	const default_log_level = mdb.log_type.get(mdb.config.log.default_type);
+	const default_err_level = mdb.log_type.get(mdb.config.log.error.default_type);
 
 	// Create process manager
 	const mgr = new Manager({
@@ -103,20 +103,20 @@ iterwait((function* () {
 		},
 		(msg, level) => {
 			const log_level = level
-				? _.isObject(level) ? level : mdb.log_types.get(level)
+				? _.isObject(level) ? level : mdb.log_type.get(level)
 				: default_log_level;
 			logger(log_level, {name: 'Master'}, msg);
 		},
 		(msg, level) => {
 			const log_level = level
-				? _.isObject(level) ? level : mdb.log_types.get(level)
+				? _.isObject(level) ? level : mdb.log_type.get(level)
 				: default_err_level;
 			logger(log_level, {name: 'ERROR'}, msg);
-		},
+		}
 	);
 
 	// Add log level handlers
-	for (const [label, level] of mdb.log_types.entries()) {
+	for (const [label, level] of mdb.log_type.entries()) {
 		if (_.isString(label)) {
 			mgr.on(`log:${label}`, _.partial(logger, level));
 		}
@@ -135,8 +135,9 @@ iterwait((function* () {
 		// Wait for all processes to exit or timeout before continuing
 		Promise.all(mgr.shutdown().map(x => x.catch(e => e)))
 		.then((procs) => {
-			mgr.log('Shutting down master...');
 			process.exitCode = 0;
+			mgr.log('Shutting down master...');
+			return mdb.close();
 		})
 		.catch((err) => {
 			if (_.isError(err)) {
@@ -162,7 +163,7 @@ iterwait((function* () {
 	// Launch child processes
 	try {
 		const procs = yield Promise.all(to_launch.map((user) => {
-			const childname = `@{user.screenname}`;
+			const childname = `@${user.screen_name}`;
 			const addtoenv = {
 				childname,
 				user_id_str: user.id_str,
