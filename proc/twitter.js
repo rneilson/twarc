@@ -306,6 +306,7 @@ function writeitems (args, batchsize) {
             if (a > 0 || r > 0) {
               counts.push(`${k} (+${a}/-${r})`);
             }
+            total++;
           }
           else if (!!v) {
             n++;
