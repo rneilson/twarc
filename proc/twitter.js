@@ -388,9 +388,9 @@ function updateuser (source) {
     const tmp = getuser(user);
 
     // Now compare
-    if (!tmp || tmp.time_ms === undefined ||
-      (date_u > tmp.time_ms && !Filters.equaluser(tmp.user, user)))
-    {
+    if (!tmp ||
+        isNaN(parseInt(tmp.time_ms)) ||
+        (date_u > tmp.time_ms && !Filters.equaluser(tmp.user, user))) {
       userdata = setuser(user, date_u);
     }
   }
