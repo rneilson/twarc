@@ -1,6 +1,6 @@
 {
   "name": "twarc",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Personal Twitter archiver and API proxy",
   "main": "app.js",
   "scripts": {
