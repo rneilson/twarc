@@ -74,7 +74,7 @@ const api = {
     },
     userset: {
       following: 'friends/ids',
-      follower: 'followers/ids',
+      followers: 'followers/ids',
       blocked: 'blocks/ids',
       muted: 'mutes/users/ids'
     },
@@ -181,7 +181,7 @@ iterwait((function* () {
   cache.timeline = _.cloneDeep(udb.config.timeline);
 
   // Load user sets, then start stream, then fetch current timelines
-  const user_sets = ['following', 'follower', 'blocked', 'muted'];
+  const user_sets = ['following', 'followers', 'blocked', 'muted'];
   yield loadsets(...user_sets);
   yield log.info(`Loaded user sets ${user_sets.join(', ')}`);
   // Stream parser
