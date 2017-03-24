@@ -19,8 +19,6 @@
     "arghs": "^1.0.0",
     "lodash": "^4.15.0",
     "node-fetch": "^1.6.0",
-    "node-ipc": "^8.1.0",
-    "node-lmdb": "rneilson/node-lmdb#enhanced",
     "rnr": "^0.5.0",
     "sqlite-pool": "^1.2.1",
     "twitter": "rneilson/node-twitter#custom"
