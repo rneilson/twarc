@@ -326,7 +326,7 @@ function writeitems (args, batchsize) {
         log.info(`Updated ${total} items (${counts.join(', ')})`);
       }
       else {
-        log.info(`All items up to date`);
+        log.display(`All items up to date`);
       }
     }
     // No longer waiting
@@ -643,7 +643,7 @@ function* refreshtimelines (...types) {
   var reply_ids = new Set();
   var cutoff = null;
 
-  log.info(`Refreshing timelines ${types.join(', ')}...`);
+  log.display(`Refreshing timelines ${types.join(', ')}...`);
 
   types.forEach(initres);
 
@@ -749,7 +749,7 @@ function* refreshtimelines (...types) {
       // Timelines which are complete will refresh again
       // Those which are not can continue
       let datestr = new Date(api.nextrefresh.value).toLocaleTimeString();
-      log.info(`Refresh incomplete, resuming at ${datestr}...`);
+      log.display(`Refresh incomplete, resuming at ${datestr}...`);
       yield api.nextrefresh.then();
     }
   }
@@ -768,7 +768,7 @@ function* refreshtimelines (...types) {
 
   // Log and return completion time
   let datestr = new Date(api.nextrefresh.value).toLocaleTimeString();
-  log.info(`Refresh complete, next refresh at ${datestr}`);
+  log.display(`Refresh complete, next refresh at ${datestr}`);
   return Date.now();
 
   // Initial parameters maker
