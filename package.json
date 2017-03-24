@@ -21,7 +21,7 @@
     "node-fetch": "^1.6.0",
     "rnr": "^0.5.0",
     "sqlite-pool": "^1.2.1",
-    "twitter": "rneilson/node-twitter#custom"
+    "twitter": "^1.7.0"
   },
   "devDependencies": {
     "chai": "^3.5.0",
