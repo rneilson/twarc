@@ -185,7 +185,8 @@ iterwait((function* () {
   yield loadsets(...user_sets);
   yield log.info(`Loaded user sets ${user_sets.join(', ')}`);
   // Stream parser
-  startstream();
+  // DISABLED as of 16 Aug 2018, because Twitter hates 3rd-party clients...
+  // startstream();
   // Error logger
   api.lastrefresh.onerror(e => mgd.err(e));
   // Initialize so it doesn't get stuck
