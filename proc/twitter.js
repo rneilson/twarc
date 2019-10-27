@@ -56,6 +56,8 @@ const api = {
     return reftime;
   }),
   window: 15 * 60 * 1000, // 15 mins
+  userset_window: 6 * 60 * 60 * 1000, // 6 hours
+  userset_interval: null,
   limits: {
     timeline: {
       user: 72,
@@ -94,6 +96,8 @@ api.lastrefresh = api.nextrefresh.on(function (reftime) {
   // Otherwise, begin new refresh loop
   return iterwait(refreshtimelines('user', 'mentions', 'favorites'), 0);
 });
+
+const user_sets = ['following', 'followers', 'blocked', 'muted'];
 
 const twit = new Twitter({
   request_options: {
@@ -142,8 +146,11 @@ const writer = {
 // Signal handlers
 process.on('SIGINT', () => {});
 process.on('SIGTERM', () => {
-  // Kill timeouts
+  // Kill timeouts, intervals
   iterwait.shutdown();
+  if (api.userset_interval) {
+    clearInterval(api.userset_interval);
+  }
 
   // Close streams
   writer.shutdown = true;
@@ -181,9 +188,7 @@ iterwait((function* () {
   cache.timeline = _.cloneDeep(udb.config.timeline);
 
   // Load user sets, then start stream, then fetch current timelines
-  const user_sets = ['following', 'followers', 'blocked', 'muted'];
   yield loadsets(...user_sets);
-  yield log.info(`Loaded user sets ${user_sets.join(', ')}`);
   // Stream parser
   // DISABLED as of 16 Aug 2018, because Twitter hates 3rd-party clients...
   // startstream();
@@ -193,6 +198,8 @@ iterwait((function* () {
   api.lastrefresh.update(null, true);
   // Start refresh cycle
   api.nextrefresh.update(Date.now());
+  // Start periodic userset refresh
+  api.userset_interval = setInterval(loadsets, api.userset_window, ...user_sets);
   
   // Aaaaand we're ready!
 })())
@@ -223,7 +230,8 @@ function loadsets (...types) {
       }
       return get_userset(name);
     });
-  }));
+  }))
+  .then(() => log.info(`Loaded user sets ${types.join(', ')}`));
 }
 
 function updateitems (args, acc) {
