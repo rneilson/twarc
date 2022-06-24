@@ -18,7 +18,7 @@
   "dependencies": {
     "arghs": "^1.0.0",
     "lodash": "^4.15.0",
-    "node-fetch": "^1.6.0",
+    "node-fetch": "^2.6.7",
     "rnr": "^0.5.0",
     "sqlite-pool": "^1.2.1",
     "twitter": "^1.7.0"
