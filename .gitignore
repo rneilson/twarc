@@ -1,0 +1,16 @@
+# Python
+.venv/
+__pycache__/
+
+# Config
+.env
+access.json
+consumer.json
+user.json
+
+# IDEs
+.vscode/
+
+# Archive-specific
+*.zip
+archive-*/
