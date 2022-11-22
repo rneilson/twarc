@@ -7,10 +7,14 @@ from pathlib import Path
 from typing import Optional, Union, Iterable, Sequence
 
 import tweepy
-
+import tweepy.models
 
 class InvalidCredentials(Exception):
     pass
+
+class InvalidUserProfile(Exception):
+    pass
+
 
 def get_base_path(base_dir: Optional[Union[Path, str]]) -> Path:
     if base_dir is None:
@@ -149,3 +153,56 @@ def ensure_access_token(
         )
 
     return access_token, access_token_secret
+
+def load_user_profile(user_file: Path) -> dict:
+    '''
+    Reads user profile from user_file, and returns user profile as dict.
+    '''
+    if not user_file.exists():
+        raise InvalidUserProfile(f'No user profile found at {user_file}')
+    if not user_file.is_file():
+        raise RuntimeError(f'{user_file} is not a file')
+    
+    user_str = user_file.read_text()
+    user_dict = json.loads(user_str)
+    if (not isinstance(user_dict, dict) or
+            'id_str' not in user_dict or
+            'screen_name' not in user_dict):
+        raise RuntimeError(f'Invalid user profile in {user_file}')
+    
+    return user_dict
+
+def get_user_profile(user_file: Path, api: tweepy.API) -> dict:
+    '''
+    Retrieves authorized user and pinned tweet in extended form, if applicable,
+    writes to user_file, and returns user profile as dict.
+    '''
+    user = api.verify_credentials(include_email=True)
+    user_dict = { **user._json }
+
+    if getattr(user, 'status', None) is not None:
+        user_status = api.get_status(
+            user.status.id_str,
+            trim_user=True,
+            include_ext_alt_text=True,
+            tweet_mode='extended',
+        )
+        user_dict['status'] = user_status._json
+
+    user_file.write_text(json.dumps(user_dict, indent=2))
+
+    return user_dict
+
+def ensure_user_profile(base_dir: Path, api: tweepy.API) -> dict:
+    '''
+    Loads user profile if available in 'user.json', or retrieves using current
+    credentials and writes to file if it does not yet exist.
+    '''
+    user_file = base_dir.joinpath('user.json')
+    try:
+        user_dict = load_user_profile(user_file)
+    except InvalidUserProfile:
+        print('No user profile found, retrieving...')
+        user_dict = get_user_profile(user_file, api)
+
+    return user_dict
