@@ -70,7 +70,7 @@ def ensure_consumer_creds(base_dir: Path) -> tuple[str, str]:
     Loads consumer key and secret if available in 'consumer.json', or prompts
     for both and writes to file if it does not yet exist.
     '''
-    consumer_file = base_dir.joinpath('consumer.json')
+    consumer_file = base_dir / 'consumer.json'
     try:
         consumer_key, consumer_secret = load_consumer_creds(consumer_file)
     except InvalidCredentials:
@@ -141,7 +141,7 @@ def ensure_access_token(
     Loads access token and secret if available in 'access.json', or prompts
     for authorization and writes to file if it does not yet exist.
     '''
-    access_file = base_dir.joinpath('access.json')
+    access_file = base_dir / 'access.json'
     try:
         access_token, access_token_secret = load_access_token(access_file)
     except InvalidCredentials:
@@ -198,7 +198,7 @@ def ensure_user_profile(base_dir: Path, api: tweepy.API) -> dict:
     Loads user profile if available in 'user.json', or retrieves using current
     credentials and writes to file if it does not yet exist.
     '''
-    user_file = base_dir.joinpath('user.json')
+    user_file = base_dir / 'user.json'
     try:
         user_dict = load_user_profile(user_file)
     except InvalidUserProfile:
