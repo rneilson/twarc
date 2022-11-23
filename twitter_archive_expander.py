@@ -5,7 +5,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Optional, Union, Iterable, Sequence
+from typing import Optional, Union, Any
 
 import tweepy
 import tweepy.models
@@ -14,6 +14,9 @@ class InvalidCredentials(Exception):
     pass
 
 class InvalidUserProfile(Exception):
+    pass
+
+class InvalidArchiveFile(Exception):
     pass
 
 
@@ -256,3 +259,33 @@ def skip_until_byte(
         offset += 1
     
     return offset, found
+
+def parse_js_file_list(file_path: Path) -> list[dict]:
+    '''
+    Parse JS file at file_path, assuming the assigned global var is a list.
+    '''
+    with file_path.open('rb') as f:
+        skip_until_byte(f, b'[')
+        parsed = json.load(f)
+    
+    if not isinstance(parsed, list):
+        raise InvalidArchiveFile(
+            f'{file_path} does not contain a list of objects'
+        )
+    
+    return parsed
+
+def parse_js_file_dict(file_path: Path) -> dict[str, Any]:
+    '''
+    Parse JS file at file_path, assuming the assigned global var is a dict.
+    '''
+    with file_path.open('rb') as f:
+        skip_until_byte(f, b'{')
+        parsed = json.load(f)
+    
+    if not isinstance(parsed, dict):
+        raise InvalidArchiveFile(
+            f'{file_path} does not contain a dict of values'
+        )
+    
+    return parsed
