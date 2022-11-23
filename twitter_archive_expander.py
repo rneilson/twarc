@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import io
 import json
 import os
 import sys
@@ -15,6 +16,8 @@ class InvalidCredentials(Exception):
 class InvalidUserProfile(Exception):
     pass
 
+
+### Configuration
 
 def get_base_path(base_dir: Optional[Union[Path, str]]) -> Path:
     if base_dir is None:
@@ -206,3 +209,50 @@ def ensure_user_profile(base_dir: Path, api: tweepy.API) -> dict:
         user_dict = get_user_profile(user_file, api)
 
     return user_dict
+
+
+### Parsing
+
+def skip_until_byte(
+    source_file: io.BufferedReader,
+    target: bytes,
+) -> tuple[int, bool]:
+    '''
+    Reads from source_file until target is found, advancing the reader position
+    up to but not including the target's offset. Returns the number of bytes
+    skipped, if target was found, and None otherwise.
+    '''
+    # Due to how peek() is implemented, it returns the entire current buffer,
+    # which means handling target bytestrings of length > 1 becomes trickier,
+    # so instead we're going to limit to 1 -- really we're only looking for a
+    # valid start byte for JSON, not anything more...
+    if len(target) != 1:
+        raise ValueError('Only single-byte targets allowed')
+
+    offset = 0
+    found = False
+
+    while True:
+        # First peek to see if next byte match target
+        look = source_file.peek(1)
+
+        # Cover the case where we hit EOF before finding target
+        if len(look) == 0:
+            # Advance file position to EOF and end
+            _ = source_file.read(1)
+            break
+
+        # Since peek() returns the whole buffer, only check the one byte
+        if look[:1] == target:
+            found = True
+            break
+        
+        # Advance one byte, let the buffering handle the inefficiency
+        read = source_file.read(1)
+        # Extra EOF handling just in case
+        if len(read) == 0:
+            break
+        # Otherwise continue
+        offset += 1
+    
+    return offset, found
