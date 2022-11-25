@@ -4,6 +4,7 @@ import io
 import json
 import os
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union, Any
 
@@ -260,7 +261,7 @@ def skip_until_byte(
     
     return offset, found
 
-def parse_js_file_list(file_path: Path) -> list[dict]:
+def parse_js_file_list(file_path: Path) -> list[dict[str, Any]]:
     '''
     Parse JS file at file_path, assuming the assigned global var is a list.
     '''
@@ -289,3 +290,98 @@ def parse_js_file_dict(file_path: Path) -> dict[str, Any]:
         )
     
     return parsed
+
+
+## Archive contents
+
+@dataclass
+class TweetJSON:
+    tweet_id: str
+    user_id: str
+    expanded: bool
+    saved_at: Optional[Path]
+    contents: Optional[dict[str, Any]]
+
+class TwitterArchiveFolder:
+    '''
+    Represents an extracted Twitter archive folder, latest version as of 2022.
+    '''
+
+    SOURCE_DIR_NAME = 'data'
+    TARGET_DIR_NAME = 'expanded'
+    ACCOUNT_FILE_NAME = 'account.js'
+    TWEET_FILE_NAMES = ('tweets.js', 'tweet.js')
+
+    user_id: str
+    base_dir: Path
+    tweet_file: Path
+    tweets: dict[str, TweetJSON]
+
+    def __init__(self, user_id: str, base_dir: Union[Path, str]) -> None:
+        self.user_id = user_id
+        if isinstance(base_dir, str):
+            self.base_dir = Path(base_dir)
+        else:
+            self.base_dir = base_dir
+        self.tweets = {}
+
+        src_dir = self.base_dir / self.SOURCE_DIR_NAME
+
+        # Validate user ID from account file
+        account_file = src_dir / self.ACCOUNT_FILE_NAME
+        account_json = parse_js_file_list(account_file)
+        if len(account_json) != 1:
+            raise InvalidArchiveFile(f'Invalid account file at {account_file}')
+        account_dict = account_json[0]
+        account_id = account_dict.get('account', {}).get('accountId', '')
+        if account_id != user_id:
+            raise InvalidArchiveFile(
+                f'Expected account id "{user_id}", '
+                f'found archive for "{account_id}"'
+            )
+
+        # Ensure tweet file present (one of a couple variations)
+        tweet_file_found = False
+        for filename in self.TWEET_FILE_NAMES:
+            self.tweet_file = src_dir / filename
+            if self.tweet_file.is_file():
+                tweet_file_found = True
+                break
+        if not tweet_file_found:
+            raise InvalidArchiveFile(f'No tweet file found in {src_dir}')
+    
+    def _get_tweet_save_path(self, tweet_id: str) -> Path:
+        '''
+        Construct path to save tweet in JSON form.
+        '''
+        path = self.base_dir.joinpath(
+            self.TARGET_DIR_NAME,
+            tweet_id[0:4],
+            (tweet_id + '.json'),
+        )
+        return path.resolve()
+    
+    def _load_tweet_json(self, tweet: TweetJSON) -> None:
+        # TODO: look for file
+        # TODO: load file, parse JSON
+        # TODO: update tweet obj
+        raise NotImplementedError
+    
+    def _save_tweet_json(self, tweet: TweetJSON) -> None:
+        if tweet.contents is None:
+            raise ValueError(f'Cannot save empty tweet {tweet.tweet_id}')
+
+        # Ensure required parent directories created, then dump as JSON
+        tweet_path = self._get_tweet_save_path(tweet.tweet_id)
+        tweet_path.parent.mkdir(parents=True, exist_ok=True)
+        with tweet_path.open('w') as f:
+            json.dump(tweet.contents, f, indent=2)
+        
+        # TODO: update tweet obj
+    
+    def load_tweets(self) -> None:
+        '''
+        Load tweets from tweet_file, sort by id, and load any tweets already
+        fetched by a previous processing run.
+        '''
+        raise NotImplementedError
