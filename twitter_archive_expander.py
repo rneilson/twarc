@@ -5,11 +5,13 @@ import io
 import json
 import os
 import sys
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, Union
 
 import tweepy
+import tweepy.errors
 import tweepy.models
 
 class InvalidCredentials(Exception):
@@ -339,7 +341,7 @@ class TwitterArchiveFolder:
     user_id: str
     base_dir: Path
     tweet_file: Path
-    tweets: dict[str, TweetJSON]
+    known_tweets: dict[int, TweetJSON]
 
     def __init__(self, user_id: str, base_dir: Union[Path, str]) -> None:
         self.user_id = user_id
@@ -347,7 +349,7 @@ class TwitterArchiveFolder:
             self.base_dir = Path(base_dir)
         else:
             self.base_dir = base_dir
-        self.tweets = {}
+        self.known_tweets = {}
 
         src_dir = self.base_dir / self.SOURCE_DIR_NAME
 
@@ -385,13 +387,44 @@ class TwitterArchiveFolder:
         )
         return path.resolve()
     
-    def _load_tweet_json(self, tweet: TweetJSON) -> None:
-        # TODO: look for file
-        # TODO: load file, parse JSON
-        # TODO: update tweet obj
-        raise NotImplementedError
+    def _is_tweet_processed(self, tweet: TweetJSON) -> bool:
+        '''
+        Check if tweet has been fetched from the API, previously attempted to
+        be fetched, or loaded from disk. Determining this is archive-specific,
+        as older archive types included user info, whereas newer ones do not.
+        '''
+        # Loaded from disk means processed, no question
+        if tweet.saved_at is not None:
+            return True
+        # Unset contents (as opposed to an empty dict) means unproccesed
+        if tweet.contents is None:
+            return False
+        # Here we're doing a bit of heuristic: if the user sub-object is set,
+        # then either it was successfully retrieved from the API, or it was
+        # deleted Twitter-side, and we're storing an incomplete version because
+        # it's all that we have access to in some fashion
+        if 'user' in tweet.contents:
+            return True
+        # Otherwise, not yet processed
+        return False
     
-    def _save_tweet_json(self, tweet: TweetJSON) -> None:
+    def _load_tweet_json(self, tweet: TweetJSON) -> TweetJSON:
+        # Look for file, load file, parse JSON
+        tweet_path = self._get_tweet_save_path(tweet.id_str)
+        try:
+            with tweet_path.open('r') as f:
+                tweet.contents = json.load(f)
+        except FileNotFoundError:
+            # If not found, tweet.saved_at will remain None, and that will be
+            # our indicator of failure
+            pass
+        else:
+            # Set (and possibly overwrite) path to match loaded contents
+            tweet.saved_at = tweet_path
+
+        return tweet
+    
+    def _save_tweet_json(self, tweet: TweetJSON) -> TweetJSON:
         if tweet.contents is None:
             raise ValueError(f'Cannot save empty tweet {tweet.id}')
 
@@ -400,8 +433,39 @@ class TwitterArchiveFolder:
         tweet_path.parent.mkdir(parents=True, exist_ok=True)
         with tweet_path.open('w') as f:
             json.dump(tweet.contents, f, indent=2)
-        
-        # TODO: update tweet obj
+        # Set (and possibly overwrite) path to match saved contents
+        tweet.saved_at = tweet_path
+
+        return tweet
+    
+    def _fetch_tweet_json(self, tweet: TweetJSON, api: tweepy.API) -> TweetJSON:
+        try:
+            # Fetch with full information if possible
+            t = api.get_status(
+                tweet.id_str,
+                include_ext_alt_text=True,
+                tweet_mode='extended',
+            )
+        except tweepy.errors.NotFound:
+            # Assuming we're fetching a once-valid tweet ID, most likely the
+            # tweet has been deleted since - if we have some information, keep
+            # it, and if not, add a very basic skeleton to indicate we've seen
+            # this tweet and we can't expand it
+            if tweet.contents is None:
+                tweet.contents = {
+                    'id': tweet.id,
+                    'id_str': tweet.id_str,
+                }
+            if 'user' not in tweet.contents:
+                tweet.contents['user'] = {
+                    'id': int(self.user_id),
+                    'id_str': self.user_id,
+                }
+        else:
+            # Otherwise, if fetch was successful, store (a copy of) the result
+            tweet.contents = json.loads(json.dumps(t._json))
+
+        return tweet
     
     def load_tweets(self) -> None:
         '''
