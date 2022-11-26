@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 
 import io
 import json
@@ -6,7 +7,7 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union, Any
+from typing import Any, Optional, Union
 
 import tweepy
 import tweepy.models
@@ -296,11 +297,34 @@ def parse_js_file_dict(file_path: Path) -> dict[str, Any]:
 
 @dataclass
 class TweetJSON:
-    tweet_id: str
+    id: int
     user_id: str
-    expanded: bool
-    saved_at: Optional[Path]
-    contents: Optional[dict[str, Any]]
+    processed: bool = False
+    saved_at: Optional[Path] = None
+    contents: Optional[dict[str, Any]] = None
+
+    @property
+    def id_str(self):
+        return str(self.id)
+
+    def __eq__(self, other: TweetJSON) -> bool:
+        return self.id == other.id
+
+    def __ne__(self, other: TweetJSON) -> bool:
+        return self.id != other.id
+
+    def __lt__(self, other: TweetJSON) -> bool:
+        return self.id < other.id
+
+    def __le__(self, other: TweetJSON) -> bool:
+        return self.id <= other.id
+
+    def __gt__(self, other: TweetJSON) -> bool:
+        return self.id > other.id
+
+    def __ge__(self, other: TweetJSON) -> bool:
+        return self.id >= other.id
+
 
 class TwitterArchiveFolder:
     '''
@@ -369,10 +393,10 @@ class TwitterArchiveFolder:
     
     def _save_tweet_json(self, tweet: TweetJSON) -> None:
         if tweet.contents is None:
-            raise ValueError(f'Cannot save empty tweet {tweet.tweet_id}')
+            raise ValueError(f'Cannot save empty tweet {tweet.id}')
 
         # Ensure required parent directories created, then dump as JSON
-        tweet_path = self._get_tweet_save_path(tweet.tweet_id)
+        tweet_path = self._get_tweet_save_path(tweet.id_str)
         tweet_path.parent.mkdir(parents=True, exist_ok=True)
         with tweet_path.open('w') as f:
             json.dump(tweet.contents, f, indent=2)
