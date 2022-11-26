@@ -217,6 +217,24 @@ def ensure_user_profile(base_dir: Path, api: tweepy.API) -> dict:
 
     return user_dict
 
+def setup_client(base_dir: Optional[Path]) -> tweepy.API:
+    '''
+    Ensures consumer creds and access token, and returns instantiated API
+    client (v1). If base_dir is None, current working directory is assumed.
+    '''
+    if base_dir is None:
+        base_dir = Path.cwd()
+
+    consumer_key, consumer_secret = ensure_consumer_creds(base_dir)
+    access_token, access_token_secret = ensure_access_token(
+        base_dir, consumer_key, consumer_secret
+    )
+    api = tweepy.API(tweepy.OAuth1UserHandler(
+        consumer_key, consumer_secret, access_token, access_token_secret,
+    ))
+
+    return api
+
 
 ### Parsing
 
