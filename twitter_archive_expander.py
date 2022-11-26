@@ -8,6 +8,7 @@ import sys
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
+from time import sleep
 from typing import Any, Optional, Union
 
 import tweepy
@@ -44,14 +45,14 @@ def load_consumer_creds(consumer_file: Path) -> tuple[str, str]:
         raise InvalidCredentials(f'No consumer credentials found at {consumer_file}')
     if not consumer_file.is_file():
         raise RuntimeError(f'{consumer_file} is not a file')
-    
+
     consumer_str = consumer_file.read_text()
     consumer_dict = json.loads(consumer_str)
     if (not isinstance(consumer_dict, dict) or
             'consumer_key' not in consumer_dict or
             'consumer_secret' not in consumer_dict):
         raise RuntimeError(f'Invalid consumer credentials in {consumer_file}')
-    
+
     return consumer_dict['consumer_key'], consumer_dict['consumer_secret']
 
 def get_consumer_creds(consumer_file: Path) -> tuple[str, str]:
@@ -98,14 +99,14 @@ def load_access_token(access_file: Path) -> tuple[str, str]:
         raise InvalidCredentials(f'No access credentials found at {access_file}')
     if not access_file.is_file():
         raise RuntimeError(f'{access_file} is not a file')
-    
+
     access_str = access_file.read_text()
     access_dict = json.loads(access_str)
     if (not isinstance(access_dict, dict) or
             'access_token' not in access_dict or
             'access_token_secret' not in access_dict):
         raise RuntimeError(f'Invalid access credentials in {access_file}')
-    
+
     return access_dict['access_token'], access_dict['access_token_secret']
 
 def get_access_token(
@@ -172,14 +173,14 @@ def load_user_profile(user_file: Path) -> dict:
         raise InvalidUserProfile(f'No user profile found at {user_file}')
     if not user_file.is_file():
         raise RuntimeError(f'{user_file} is not a file')
-    
+
     user_str = user_file.read_text()
     user_dict = json.loads(user_str)
     if (not isinstance(user_dict, dict) or
             'id_str' not in user_dict or
             'screen_name' not in user_dict):
         raise RuntimeError(f'Invalid user profile in {user_file}')
-    
+
     return user_dict
 
 def get_user_profile(user_file: Path, api: tweepy.API) -> dict:
@@ -271,7 +272,7 @@ def skip_until_byte(
         if look[:1] == target:
             found = True
             break
-        
+
         # Advance one byte, let the buffering handle the inefficiency
         read = source_file.read(1)
         # Extra EOF handling just in case
@@ -279,7 +280,7 @@ def skip_until_byte(
             break
         # Otherwise continue
         offset += 1
-    
+
     return offset, found
 
 def parse_js_file_list(file_path: Path) -> list[dict[str, Any]]:
@@ -289,12 +290,12 @@ def parse_js_file_list(file_path: Path) -> list[dict[str, Any]]:
     with file_path.open('rb') as f:
         skip_until_byte(f, b'[')
         parsed = json.load(f)
-    
+
     if not isinstance(parsed, list):
         raise InvalidArchiveFile(
             f'{file_path} does not contain a list of objects'
         )
-    
+
     return parsed
 
 def parse_js_file_dict(file_path: Path) -> dict[str, Any]:
@@ -304,12 +305,12 @@ def parse_js_file_dict(file_path: Path) -> dict[str, Any]:
     with file_path.open('rb') as f:
         skip_until_byte(f, b'{')
         parsed = json.load(f)
-    
+
     if not isinstance(parsed, dict):
         raise InvalidArchiveFile(
             f'{file_path} does not contain a dict of values'
         )
-    
+
     return parsed
 
 
@@ -394,7 +395,7 @@ class TwitterArchiveFolder:
                 break
         if not tweet_file_found:
             raise InvalidArchiveFile(f'No tweet file found in {src_dir}')
-    
+
     def _get_tweet_save_path(self, tweet_id: str) -> Path:
         '''
         Construct path to save tweet in JSON form.
@@ -405,7 +406,7 @@ class TwitterArchiveFolder:
             (tweet_id + '.json'),
         )
         return path.resolve()
-    
+
     def _is_tweet_processed(self, tweet: TweetJSON) -> bool:
         '''
         Check if tweet has been fetched from the API, previously attempted to
@@ -426,7 +427,7 @@ class TwitterArchiveFolder:
             return True
         # Otherwise, not yet processed
         return False
-    
+
     def _load_tweet_json(self, tweet: TweetJSON) -> None:
         # Look for file, load file, parse JSON
         tweet_path = self._get_tweet_save_path(tweet.id_str)
@@ -440,7 +441,7 @@ class TwitterArchiveFolder:
         else:
             # Set (and possibly overwrite) path to match loaded contents
             tweet.saved_at = tweet_path
-    
+
     def _save_tweet_json(self, tweet: TweetJSON) -> None:
         if tweet.contents is None:
             raise ValueError(f'Cannot save empty tweet {tweet.id}')
@@ -452,7 +453,7 @@ class TwitterArchiveFolder:
             json.dump(tweet.contents, f, indent=2)
         # Set (and possibly overwrite) path to match saved contents
         tweet.saved_at = tweet_path
-    
+
     def _add_skeleton_tweet_json(self, tweet: TweetJSON) -> None:
         # Assuming we're fetching a once-valid tweet ID, most likely the
         # tweet has been deleted since - if we have some information, keep
@@ -534,3 +535,40 @@ class TwitterArchiveFolder:
 
         # Sort list of tweets yet to be processed
         self.to_process.sort()
+
+    def process_tweets(self, api: tweepy.API, force_overwrite=False) -> None:
+        '''
+        Fetch and save any tweets queued for processing, in batches.
+        '''
+        # GET statuses/lookup accepts a max of 100 per request
+        batch_size = 100
+        sleep_time = 15 * 60    # 15 minutes
+
+        for i in range(0, len(self.to_process), batch_size):
+            batch = self.to_process[i:i+batch_size]
+            # Need to catch 429 errors and wait
+            while True:
+                try:
+                    self._fetch_tweet_json_batch(batch, api)
+                except tweepy.errors.TooManyRequests:
+                    print(
+                        f'Too many requests error from API, '
+                        f'sleeping for {sleep_time // 60} mins'
+                    )
+                    sleep(sleep_time)
+                else:
+                    break
+
+            # Save the now-fetched tweets and add them to the proccessed set
+            for tweet in batch:
+                if self._is_tweet_processed(tweet):
+                    # If somehow the tweet was previously saved, probably
+                    # shouldn't overwrite it unless specified
+                    if force_overwrite or not tweet.saved_at:
+                        self._save_tweet_json(tweet)
+                    self.processed[tweet.id] = tweet
+
+        # Replace to-process list with any still outstanding
+        self.to_process = [
+            t for t in self.to_process if t.id not in self.processed
+        ]
