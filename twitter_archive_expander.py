@@ -319,7 +319,6 @@ def parse_js_file_dict(file_path: Path) -> dict[str, Any]:
 class TweetJSON:
     id: int
     user_id: str
-    processed: bool = False
     saved_at: Optional[Path] = None
     contents: Optional[dict[str, Any]] = None
 
@@ -354,12 +353,13 @@ class TwitterArchiveFolder:
     SOURCE_DIR_NAME = 'data'
     TARGET_DIR_NAME = 'expanded'
     ACCOUNT_FILE_NAME = 'account.js'
-    TWEET_FILE_NAMES = ('tweets.js', 'tweet.js')
+    TWEETS_FILE_NAMES = ('tweets.js', 'tweet.js')
 
     user_id: str
     base_dir: Path
-    tweet_file: Path
-    known_tweets: dict[int, TweetJSON]
+    tweets_file: Path
+    processed: dict[int, TweetJSON]
+    to_process: list[TweetJSON]
 
     def __init__(self, user_id: str, base_dir: Union[Path, str]) -> None:
         self.user_id = user_id
@@ -367,7 +367,8 @@ class TwitterArchiveFolder:
             self.base_dir = Path(base_dir)
         else:
             self.base_dir = base_dir
-        self.known_tweets = {}
+        self.processed = {}
+        self.to_process = []
 
         src_dir = self.base_dir / self.SOURCE_DIR_NAME
 
@@ -386,9 +387,9 @@ class TwitterArchiveFolder:
 
         # Ensure tweet file present (one of a couple variations)
         tweet_file_found = False
-        for filename in self.TWEET_FILE_NAMES:
-            self.tweet_file = src_dir / filename
-            if self.tweet_file.is_file():
+        for filename in self.TWEETS_FILE_NAMES:
+            self.tweets_file = src_dir / filename
+            if self.tweets_file.is_file():
                 tweet_file_found = True
                 break
         if not tweet_file_found:
@@ -426,7 +427,7 @@ class TwitterArchiveFolder:
         # Otherwise, not yet processed
         return False
     
-    def _load_tweet_json(self, tweet: TweetJSON) -> TweetJSON:
+    def _load_tweet_json(self, tweet: TweetJSON) -> None:
         # Look for file, load file, parse JSON
         tweet_path = self._get_tweet_save_path(tweet.id_str)
         try:
@@ -439,10 +440,8 @@ class TwitterArchiveFolder:
         else:
             # Set (and possibly overwrite) path to match loaded contents
             tweet.saved_at = tweet_path
-
-        return tweet
     
-    def _save_tweet_json(self, tweet: TweetJSON) -> TweetJSON:
+    def _save_tweet_json(self, tweet: TweetJSON) -> None:
         if tweet.contents is None:
             raise ValueError(f'Cannot save empty tweet {tweet.id}')
 
@@ -453,10 +452,24 @@ class TwitterArchiveFolder:
             json.dump(tweet.contents, f, indent=2)
         # Set (and possibly overwrite) path to match saved contents
         tweet.saved_at = tweet_path
-
-        return tweet
     
-    def _fetch_tweet_json(self, tweet: TweetJSON, api: tweepy.API) -> TweetJSON:
+    def _add_skeleton_tweet_json(self, tweet: TweetJSON) -> None:
+        # Assuming we're fetching a once-valid tweet ID, most likely the
+        # tweet has been deleted since - if we have some information, keep
+        # it, and if not, add a very basic skeleton to indicate we've seen
+        # this tweet and we can't expand it
+        if tweet.contents is None:
+            tweet.contents = {
+                'id': tweet.id,
+                'id_str': tweet.id_str,
+            }
+        if 'user' not in tweet.contents:
+            tweet.contents['user'] = {
+                'id': int(self.user_id),
+                'id_str': self.user_id,
+            }
+
+    def _fetch_tweet_json(self, tweet: TweetJSON, api: tweepy.API) -> None:
         try:
             # Fetch with full information if possible
             t = api.get_status(
@@ -465,29 +478,59 @@ class TwitterArchiveFolder:
                 tweet_mode='extended',
             )
         except tweepy.errors.NotFound:
-            # Assuming we're fetching a once-valid tweet ID, most likely the
-            # tweet has been deleted since - if we have some information, keep
-            # it, and if not, add a very basic skeleton to indicate we've seen
-            # this tweet and we can't expand it
-            if tweet.contents is None:
-                tweet.contents = {
-                    'id': tweet.id,
-                    'id_str': tweet.id_str,
-                }
-            if 'user' not in tweet.contents:
-                tweet.contents['user'] = {
-                    'id': int(self.user_id),
-                    'id_str': self.user_id,
-                }
+            self._add_skeleton_tweet_json(tweet)
         else:
             # Otherwise, if fetch was successful, store (a copy of) the result
             tweet.contents = json.loads(json.dumps(t._json))
 
-        return tweet
-    
+    def _fetch_tweet_json_batch(
+        self,
+        tweets: list[TweetJSON],
+        api: tweepy.API
+    ) -> None:
+        fetched = api.lookup_statuses(
+            id=[tweet.id for tweet in tweets],
+            include_ext_alt_text=True,
+            tweet_mode='extended',
+        )
+        # As some tweets may not be returned, we'll have to check against this
+        found_tweets: dict[str, tweepy.models.Status] = {
+            t.id_str: t for t in fetched
+        }
+
+        # Match each from the batch with the fetched results
+        for tweet in tweets:
+            t = found_tweets.get(tweet.id_str)
+            if t is None:
+                # Tweet wasn't found (deleted), use what's already present
+                self._add_skeleton_tweet_json(tweet)
+            else:
+                # Save a raw-JSON copy instead of the tweepy model
+                tweet.contents = json.loads(json.dumps(t._json))  # type: ignore
+
     def load_tweets(self) -> None:
         '''
         Load tweets from tweet_file, sort by id, and load any tweets already
         fetched by a previous processing run.
         '''
-        raise NotImplementedError
+        for item in parse_js_file_list(self.tweets_file):
+            raw_tweet = item['tweet']
+            tweet = TweetJSON(
+                int(raw_tweet['id_str']),
+                raw_tweet.get('user_id_str', self.user_id),
+                contents=raw_tweet,
+            )
+            # Attempt to load from disk, and consider processed if saved
+            self._load_tweet_json(tweet)
+            if self._is_tweet_processed(tweet):
+                # We can assume this is saved, since we just loaded, and for
+                # this archive type, we know that the archived tweets lack
+                # user objects, so they won't mistakenly flag as processed
+                # even though they're not saved
+                self.processed[tweet.id] = tweet
+            else:
+                # Enqueue for later
+                self.to_process.append(tweet)
+
+        # Sort list of tweets yet to be processed
+        self.to_process.sort()
