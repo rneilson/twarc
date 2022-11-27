@@ -491,6 +491,7 @@ class TwitterArchiveFolder:
     def _fetch_tweet_json(self, tweet: TweetJSON) -> None:
         try:
             # Fetch with full information if possible
+            print(f'Fetching single tweet {tweet.id}')
             t = self.api.get_status(
                 tweet.id_str,
                 include_ext_alt_text=True,
@@ -506,6 +507,7 @@ class TwitterArchiveFolder:
         self,
         tweets: list[TweetJSON],
     ) -> None:
+        print(f'Fetching {len(tweets)} tweets...')
         fetched = self.api.lookup_statuses(
             id=[tweet.id for tweet in tweets],
             include_ext_alt_text=True,
@@ -553,15 +555,22 @@ class TwitterArchiveFolder:
         # Sort list of tweets yet to be processed
         self.to_process.sort()
 
-    def process_tweets(self, force_overwrite=False) -> None:
+    def process_tweets(
+        self,
+        force_overwrite = False,
+        max_to_process: Optional[int] = None
+    ) -> None:
         '''
         Fetch and save any tweets queued for processing, in batches.
         '''
         # GET statuses/lookup accepts a max of 100 per request
         batch_size = 100
         sleep_time = 15 * 60    # 15 minutes
+        if max_to_process is None:
+            max_to_process = len(self.to_process)
 
-        for i in range(0, len(self.to_process), batch_size):
+        num_processed = 0
+        for i in range(0, max_to_process, batch_size):
             batch = self.to_process[i:i+batch_size]
             # Need to catch 429 errors and wait
             while True:
@@ -584,6 +593,9 @@ class TwitterArchiveFolder:
                     if force_overwrite or not tweet.saved_at:
                         self._save_tweet_json(tweet)
                     self.processed[tweet.id] = tweet
+                    num_processed += 1
+
+        print(f'Processed {num_processed} tweets')
 
         # Replace to-process list with any still outstanding
         self.to_process = [
