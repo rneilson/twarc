@@ -191,7 +191,7 @@ def load_user_profile(user_file: Path) -> dict:
     Reads user profile from user_file, and returns user profile as dict.
     '''
     if not user_file.exists():
-        raise InvalidUserProfile(f'No user profile found at {user_file}')
+        raise FileNotFoundError(f'No user profile found at {user_file}')
     if not user_file.is_file():
         raise RuntimeError(f'{user_file} is not a file')
 
@@ -204,12 +204,15 @@ def load_user_profile(user_file: Path) -> dict:
 
     return user_dict
 
-def get_user_profile(api: tweepy.API) -> dict:
+def get_user_profile(api: tweepy.API, fetch_pinned=True) -> dict:
     '''
     Retrieves authorized user and pinned tweet in extended form, if applicable,
     and returns user profile as dict.
     '''
-    user = api.verify_credentials(include_email=True)
+    user = api.verify_credentials(
+        include_email=True,
+        skip_status=not fetch_pinned,
+    )
     user_dict = json.loads(json.dumps(user._json))
 
     if getattr(user, 'status', None) is not None:
@@ -231,11 +234,22 @@ def ensure_user_profile(base_dir: Path, api: tweepy.API) -> dict:
     user_file = base_dir / 'user.json'
     try:
         user_dict = load_user_profile(user_file)
-    except InvalidUserProfile:
+        # Ensure API is using the same user id as the file
+        using_creds = get_user_profile(api, fetch_pinned=False)
+        if user_dict['id_str'] != using_creds['id_str']:
+            raise InvalidUserProfile(
+                f'Saved user profile is for user id {user_dict["id_str"]}, '
+                f'but API access is in the context of '
+                f'user id {using_creds["id_str"]}'
+            )
+    except FileNotFoundError:
         log.info('No user profile found, retrieving...')
         user_dict = get_user_profile(api)
         # TODO: spin into own func?
         user_file.write_text(json.dumps(user_dict, indent=2))
+
+    # Cache user dict for later
+    api._user_dict = user_dict  # type: ignore
 
     return user_dict
 
@@ -400,8 +414,10 @@ class TwitterArchiveFolder:
         # setup a new client and all the credentials
         if api:
             self.api = api
-            # Load profile from API but do not save
-            user_dict = get_user_profile(self.api)
+            user_dict = getattr(api, '_user_dict', None)
+            if user_dict is None:
+                # Load profile from API but do not save
+                user_dict = get_user_profile(self.api, fetch_pinned=False)
         else:
             # Asks for credentials and authorization if required
             self.api = setup_client(self.base_dir)
