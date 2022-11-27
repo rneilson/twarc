@@ -210,7 +210,7 @@ def get_user_profile(api: tweepy.API) -> dict:
     and returns user profile as dict.
     '''
     user = api.verify_credentials(include_email=True)
-    user_dict = { **user._json }
+    user_dict = json.loads(json.dumps(user._json))
 
     if getattr(user, 'status', None) is not None:
         user_status = api.get_status(
@@ -219,7 +219,7 @@ def get_user_profile(api: tweepy.API) -> dict:
             include_ext_alt_text=True,
             tweet_mode='extended',
         )
-        user_dict['status'] = user_status._json
+        user_dict['status'] = json.loads(json.dumps(user_status._json))
 
     return user_dict
 
@@ -651,6 +651,8 @@ def main(
 
     # Will ensure consumer creds and access token are set
     api = setup_client(creds_dir)
+    user_dict = ensure_user_profile(creds_dir, api)
+    log.info(f'Accessing Twitter API as {user_dict["screen_name"]}')
 
     archive = TwitterArchiveFolder(archive_dir, api=api)
     log.info('Loading tweets from archive...')
