@@ -183,10 +183,10 @@ def load_user_profile(user_file: Path) -> dict:
 
     return user_dict
 
-def get_user_profile(user_file: Path, api: tweepy.API) -> dict:
+def get_user_profile(api: tweepy.API) -> dict:
     '''
     Retrieves authorized user and pinned tweet in extended form, if applicable,
-    writes to user_file, and returns user profile as dict.
+    and returns user profile as dict.
     '''
     user = api.verify_credentials(include_email=True)
     user_dict = { **user._json }
@@ -200,8 +200,6 @@ def get_user_profile(user_file: Path, api: tweepy.API) -> dict:
         )
         user_dict['status'] = user_status._json
 
-    user_file.write_text(json.dumps(user_dict, indent=2))
-
     return user_dict
 
 def ensure_user_profile(base_dir: Path, api: tweepy.API) -> dict:
@@ -214,7 +212,9 @@ def ensure_user_profile(base_dir: Path, api: tweepy.API) -> dict:
         user_dict = load_user_profile(user_file)
     except InvalidUserProfile:
         print('No user profile found, retrieving...')
-        user_dict = get_user_profile(user_file, api)
+        user_dict = get_user_profile(api)
+        # TODO: spin into own func?
+        user_file.write_text(json.dumps(user_dict, indent=2))
 
     return user_dict
 
@@ -356,20 +356,38 @@ class TwitterArchiveFolder:
     ACCOUNT_FILE_NAME = 'account.js'
     TWEETS_FILE_NAMES = ('tweets.js', 'tweet.js')
 
+    api: tweepy.API
     user_id: str
     base_dir: Path
     tweets_file: Path
     processed: dict[int, TweetJSON]
     to_process: list[TweetJSON]
 
-    def __init__(self, user_id: str, base_dir: Union[Path, str]) -> None:
-        self.user_id = user_id
+    def __init__(
+        self,
+        base_dir: Union[Path, str],
+        api: Optional[tweepy.API] = None,
+    ) -> None:
         if isinstance(base_dir, str):
             self.base_dir = Path(base_dir)
         else:
             self.base_dir = base_dir
         self.processed = {}
         self.to_process = []
+
+        # Use existing API client with implied user, if given, otherwise
+        # setup a new client and all the credentials
+        if api:
+            self.api = api
+            # Load profile from API but do not save
+            user_dict = get_user_profile(self.api)
+        else:
+            # Asks for credentials and authorization if required
+            self.api = setup_client(self.base_dir)
+            # Loads profile from API if not already present and saves
+            user_file = self.base_dir / 'user.json'
+            user_dict = ensure_user_profile(user_file, self.api)
+        self.user_id = user_dict['id_str']
 
         src_dir = self.base_dir / self.SOURCE_DIR_NAME
 
@@ -380,9 +398,9 @@ class TwitterArchiveFolder:
             raise InvalidArchiveFile(f'Invalid account file at {account_file}')
         account_dict = account_json[0]
         account_id = account_dict.get('account', {}).get('accountId', '')
-        if account_id != user_id:
+        if account_id != self.user_id:
             raise InvalidArchiveFile(
-                f'Expected account id "{user_id}", '
+                f'Expected account id "{self.user_id}", '
                 f'found archive for "{account_id}"'
             )
 
@@ -470,10 +488,10 @@ class TwitterArchiveFolder:
                 'id_str': self.user_id,
             }
 
-    def _fetch_tweet_json(self, tweet: TweetJSON, api: tweepy.API) -> None:
+    def _fetch_tweet_json(self, tweet: TweetJSON) -> None:
         try:
             # Fetch with full information if possible
-            t = api.get_status(
+            t = self.api.get_status(
                 tweet.id_str,
                 include_ext_alt_text=True,
                 tweet_mode='extended',
@@ -487,9 +505,8 @@ class TwitterArchiveFolder:
     def _fetch_tweet_json_batch(
         self,
         tweets: list[TweetJSON],
-        api: tweepy.API
     ) -> None:
-        fetched = api.lookup_statuses(
+        fetched = self.api.lookup_statuses(
             id=[tweet.id for tweet in tweets],
             include_ext_alt_text=True,
             tweet_mode='extended',
@@ -536,7 +553,7 @@ class TwitterArchiveFolder:
         # Sort list of tweets yet to be processed
         self.to_process.sort()
 
-    def process_tweets(self, api: tweepy.API, force_overwrite=False) -> None:
+    def process_tweets(self, force_overwrite=False) -> None:
         '''
         Fetch and save any tweets queued for processing, in batches.
         '''
@@ -549,7 +566,7 @@ class TwitterArchiveFolder:
             # Need to catch 429 errors and wait
             while True:
                 try:
-                    self._fetch_tweet_json_batch(batch, api)
+                    self._fetch_tweet_json_batch(batch)
                 except tweepy.errors.TooManyRequests:
                     print(
                         f'Too many requests error from API, '
