@@ -570,6 +570,7 @@ class TwitterArchiveFolder:
             max_to_process = len(self.to_process)
 
         num_processed = 0
+        keep_processing = True
         for i in range(0, max_to_process, batch_size):
             batch = self.to_process[i:i+batch_size]
             # Need to catch 429 errors and wait
@@ -581,9 +582,18 @@ class TwitterArchiveFolder:
                         f'Too many requests error from API, '
                         f'sleeping for {sleep_time // 60} mins'
                     )
-                    sleep(sleep_time)
+                    # Allow for graceful cancellation here
+                    try:
+                        sleep(sleep_time)
+                    except KeyboardInterrupt:
+                        keep_processing = False
+                        break
                 else:
                     break
+
+            # Break before finalizing this batch
+            if not keep_processing:
+                break
 
             # Save the now-fetched tweets and add them to the proccessed set
             for tweet in batch:
