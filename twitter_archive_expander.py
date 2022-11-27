@@ -420,7 +420,7 @@ class TwitterArchiveFolder:
         '''
         path = self.base_dir.joinpath(
             self.TARGET_DIR_NAME,
-            tweet_id[0:4],
+            tweet_id[0:2],
             (tweet_id + '.json'),
         )
         return path.resolve()
