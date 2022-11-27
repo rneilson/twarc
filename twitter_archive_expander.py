@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import os
 import sys
 from collections import deque
@@ -14,6 +15,25 @@ from typing import Any, Optional, Union
 import tweepy
 import tweepy.errors
 import tweepy.models
+
+
+### Logging setup
+
+def _setup_logging():
+    log_level = os.environ.get('LOG_LEVEL', 'INFO')
+    log_level_int = getattr(logging, log_level.upper(), None)
+    if not isinstance(log_level_int, int):
+        raise ValueError(f'Invalid log level "{log_level}"')
+    logging.basicConfig(
+        format='%(asctime)s [%(levelname)s] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
+
+_setup_logging()
+log = logging.getLogger(__name__)
+
+
+### Exceptions
 
 class InvalidCredentials(Exception):
     pass
@@ -85,7 +105,7 @@ def ensure_consumer_creds(base_dir: Path) -> tuple[str, str]:
     try:
         consumer_key, consumer_secret = load_consumer_creds(consumer_file)
     except InvalidCredentials:
-        print('No consumer credentials found.')
+        log.warning('No consumer credentials found.')
         consumer_key, consumer_secret = get_consumer_creds(consumer_file)
 
     return consumer_key, consumer_secret
@@ -156,7 +176,7 @@ def ensure_access_token(
     try:
         access_token, access_token_secret = load_access_token(access_file)
     except InvalidCredentials:
-        print('No access token found.')
+        log.warning('No access token found.')
         access_token, access_token_secret = get_access_token(
             access_file,
             consumer_key,
@@ -211,7 +231,7 @@ def ensure_user_profile(base_dir: Path, api: tweepy.API) -> dict:
     try:
         user_dict = load_user_profile(user_file)
     except InvalidUserProfile:
-        print('No user profile found, retrieving...')
+        log.info('No user profile found, retrieving...')
         user_dict = get_user_profile(api)
         # TODO: spin into own func?
         user_file.write_text(json.dumps(user_dict, indent=2))
@@ -491,7 +511,7 @@ class TwitterArchiveFolder:
     def _fetch_tweet_json(self, tweet: TweetJSON) -> None:
         try:
             # Fetch with full information if possible
-            print(f'Fetching single tweet {tweet.id}')
+            log.info(f'Fetching single tweet {tweet.id}')
             t = self.api.get_status(
                 tweet.id_str,
                 include_ext_alt_text=True,
@@ -507,7 +527,7 @@ class TwitterArchiveFolder:
         self,
         tweets: list[TweetJSON],
     ) -> None:
-        print(f'Fetching {len(tweets)} tweets...')
+        log.info(f'Fetching {len(tweets)} tweets...')
         fetched = self.api.lookup_statuses(
             id=[tweet.id for tweet in tweets],
             include_ext_alt_text=True,
@@ -578,7 +598,7 @@ class TwitterArchiveFolder:
                 try:
                     self._fetch_tweet_json_batch(batch)
                 except tweepy.errors.TooManyRequests:
-                    print(
+                    log.warning(
                         f'Too many requests error from API, '
                         f'sleeping for {sleep_time // 60} mins'
                     )
@@ -605,7 +625,7 @@ class TwitterArchiveFolder:
                     self.processed[tweet.id] = tweet
                     num_processed += 1
 
-        print(f'Processed {num_processed} tweets')
+        log.info(f'Processed {num_processed} tweets')
 
         # Replace to-process list with any still outstanding
         self.to_process = [
