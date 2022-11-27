@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 import io
 import json
 import logging
 import os
-import sys
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
@@ -27,6 +27,7 @@ def _setup_logging():
     logging.basicConfig(
         format='%(asctime)s [%(levelname)s] %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
+        level=log_level_int,
     )
 
 _setup_logging()
@@ -80,10 +81,10 @@ def get_consumer_creds(consumer_file: Path) -> tuple[str, str]:
     Prompts for consumer key and secret, then writes to consumer_file.
     '''
     consumer_key = input(
-        'Please enter the consumer key for the application:'
+        'Please enter the consumer key for the application: '
     )
     consumer_secret = input(
-        'Please enter the consumer secret for the application:'
+        'Please enter the consumer secret for the application: '
     )
     if not (consumer_key and consumer_secret):
         raise RuntimeError('No consumer credentials provided')
@@ -152,7 +153,7 @@ def get_access_token(
         f'\n{auth_url}\n'
         f'Then copy the PIN number which appears and type it below.\n'
     )
-    pin = input('Please enter the PIN:')
+    pin = input('Please enter the PIN: ')
     access_token, access_token_secret = user_handler.get_access_token(pin)
 
     access_dict = {
@@ -578,7 +579,7 @@ class TwitterArchiveFolder:
     def process_tweets(
         self,
         force_overwrite = False,
-        max_to_process: Optional[int] = None
+        max_to_process: Optional[int] = None,
     ) -> None:
         '''
         Fetch and save any tweets queued for processing, in batches.
@@ -631,3 +632,71 @@ class TwitterArchiveFolder:
         self.to_process = [
             t for t in self.to_process if t.id not in self.processed
         ]
+
+
+def main(
+    archive_dir: Union[str, Path],
+    creds_dir: Optional[Union[str, Path]] = None,
+    fetch_max: Optional[int] = None,
+) -> None:
+    if isinstance(archive_dir, str):
+        archive_dir = Path(archive_dir)
+    archive_dir = archive_dir.resolve()
+
+    if creds_dir is None:
+        creds_dir = Path.cwd()
+    elif isinstance(creds_dir, str):
+        creds_dir = Path(creds_dir)
+    creds_dir = creds_dir.resolve()
+
+    # Will ensure consumer creds and access token are set
+    api = setup_client(creds_dir)
+
+    archive = TwitterArchiveFolder(archive_dir, api=api)
+    log.info('Loading tweets from archive...')
+    archive.load_tweets()
+
+    total_in_archive = len(archive.processed) + len(archive.to_process)
+    num_to_process = (
+        fetch_max
+        if fetch_max is not None
+        else len(archive.to_process)
+    )
+    log.info(f'{total_in_archive} tweets in archive')
+    log.info(f'{len(archive.processed)} tweets already processed')
+    log.info(f'{num_to_process} tweets will be processed')
+
+    archive.process_tweets(
+        max_to_process=fetch_max if fetch_max is not None else num_to_process
+    )
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        prog='twitter_archive_expander.py',
+        description=(
+            'Parses a Twitter archive and fetches extended versions of tweets.'
+        ),
+    )
+    parser.add_argument(
+        'archive_dir', type=Path, metavar='ARCHIVE',
+        help='Extracted Twitter archive directory'
+    )
+    parser.add_argument(
+        '-c', '--creds-dir', type=Path, required=False,
+        help=(
+            'Directory to find/store access credentials '
+            '(default current directory)'
+        )
+    )
+    parser.add_argument(
+        '-m', '--fetch-max', type=int, required=False,
+        help='Maximum number of tweets to fetch from the API'
+    )
+
+    args = parser.parse_args()
+    # print(args.__repr__())
+    main(
+        args.archive_dir,
+        creds_dir=args.creds_dir,
+        fetch_max=args.fetch_max,
+    )
